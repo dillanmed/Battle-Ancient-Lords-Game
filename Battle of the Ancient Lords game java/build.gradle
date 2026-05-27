@@ -1,0 +1,19 @@
+plugins {
+    id 'groovy'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation 'org.codehaus.groovy:groovy-all:3.0.21'
+
+    implementation 'de.gurkenlabs:litiengine:0.5.0'
+}
+
+application {
+    mainClass = 'Main'
+}
