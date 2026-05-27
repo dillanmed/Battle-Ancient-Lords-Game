@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: servico-autenticacao
+
+  profiles:
+    active: local
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:U1VQRVJfU0VDUkVUX0pXVF9LRVlfUEFSQV9ERVZfUkVQT1NfTVVERV9FTV9QUk9EVUNBTw==}
+    expiracao-ms: 86400000

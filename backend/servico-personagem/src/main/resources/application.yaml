@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: servico-personagem
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/db_personagem
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8081
