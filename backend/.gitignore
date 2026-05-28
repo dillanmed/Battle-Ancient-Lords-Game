@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
+
+# Arquivos de ambiente
+.env
+
+# Spring configs secretos
+src/main/resources/application.yaml
+src/main/resources/application-postgres.yaml
