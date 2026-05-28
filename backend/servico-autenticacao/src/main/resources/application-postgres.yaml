@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/db_autenticacao
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?user=postgres.egnbgiknsyzojqfddxyt&password=rgHQOoMd8ggky7Ut
+    username: postgres.egnbgiknsyzojqfddxyt
+    password: rgHQOoMd8ggky7Ut
 
   jpa:
     hibernate:
