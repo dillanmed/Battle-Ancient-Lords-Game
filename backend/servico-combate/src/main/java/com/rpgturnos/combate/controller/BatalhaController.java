@@ -3,6 +3,7 @@ package com.rpgturnos.combate.controller;
 import com.rpgturnos.combate.dto.BatalhaResponse;
 import com.rpgturnos.combate.dto.CriarBatalhaRequest;
 import com.rpgturnos.combate.dto.EventoBatalhaResponse;
+import com.rpgturnos.combate.dto.HabilidadeRequest;
 import com.rpgturnos.combate.facade.CombateFacade;
 import com.rpgturnos.combate.mapper.BatalhaMapper;
 import com.rpgturnos.combate.model.Batalha;
@@ -58,6 +59,13 @@ public class BatalhaController {
     @PostMapping("/{id}/defender")
     public ResponseEntity<BatalhaResponse> defender(@PathVariable Long id) {
         Batalha batalha = combateFacade.defender(id);
+        return ResponseEntity.ok(BatalhaMapper.toResponse(batalha));
+    }
+
+    @PostMapping("/{id}/habilidade")
+    public ResponseEntity<BatalhaResponse> usarHabilidade(@PathVariable Long id,
+                                                          @RequestBody HabilidadeRequest request) {
+        Batalha batalha = combateFacade.usarHabilidade(id, request);
         return ResponseEntity.ok(BatalhaMapper.toResponse(batalha));
     }
 

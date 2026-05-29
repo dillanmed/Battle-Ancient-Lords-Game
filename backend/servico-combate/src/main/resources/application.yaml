@@ -23,4 +23,4 @@ server:
 
 services:
   character-service:
-    url: http://localhost:8082
+    url: http://localhost:8081

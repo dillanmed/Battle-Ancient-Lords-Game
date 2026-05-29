@@ -6,9 +6,16 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.rpgturnos.combate.client.CharacterClient;
+import com.rpgturnos.combate.client.DadosCombatePersonagemResponse;
+import com.rpgturnos.combate.decorator.AtaqueBuffDecorator;
+import com.rpgturnos.combate.decorator.DefesaBuffDecorator;
+import com.rpgturnos.combate.decorator.DefesaDebuffDecorator;
+import com.rpgturnos.combate.dto.HabilidadeRequest;
 import com.rpgturnos.combate.event.BatalhaFinalizadaEvent;
 import com.rpgturnos.combate.exception.BatalhaFinalizadaException;
 import com.rpgturnos.combate.exception.BatalhaNaoEncontradaException;
+import com.rpgturnos.combate.exception.HabilidadeInvalidaException;
 import com.rpgturnos.combate.exception.TurnoInvalidoException;
 import com.rpgturnos.combate.factory.GoblinFactory;
 import com.rpgturnos.combate.factory.InimigoFactory;
@@ -21,6 +28,7 @@ import com.rpgturnos.combate.model.Turno;
 import com.rpgturnos.combate.rabbitmq.BatalhaProducer;
 import com.rpgturnos.combate.repository.BatalhaRepository;
 import com.rpgturnos.combate.strategy.DamageStrategy;
+import com.rpgturnos.combate.strategy.MagicalDamageStrategy;
 import com.rpgturnos.combate.strategy.PhysicalDamageStrategy;
 
 @Service
@@ -29,15 +37,19 @@ public class BatalhaService {
     private final BatalhaRepository batalhaRepository;
     private final BatalhaProducer batalhaProducer;
     private final EventoBatalhaService eventoBatalhaService;
+    private final CharacterClient characterClient;
     private final InimigoFactory inimigoFactory = new GoblinFactory();
     private final DamageStrategy damageStrategy = new PhysicalDamageStrategy();
+    private final DamageStrategy magicalDamageStrategy = new MagicalDamageStrategy();
 
     public BatalhaService(BatalhaRepository batalhaRepository,
                           BatalhaProducer batalhaProducer,
-                          EventoBatalhaService eventoBatalhaService) {
+                          EventoBatalhaService eventoBatalhaService,
+                          CharacterClient characterClient) {
         this.batalhaRepository = batalhaRepository;
         this.batalhaProducer = batalhaProducer;
         this.eventoBatalhaService = eventoBatalhaService;
+        this.characterClient = characterClient;
     }
 
     public Batalha criarBatalha(Batalha batalha) {
@@ -114,6 +126,27 @@ public class BatalhaService {
         return batalhaRepository.save(batalha);
     }
 
+    public Batalha usarHabilidade(Long id, HabilidadeRequest request) {
+        Batalha batalha = buscarBatalhaOuFalhar(id);
+
+        validarBatalhaEmAndamento(batalha);
+        validarTurnoJogador(batalha);
+        validarHabilidade(request);
+        validarMana(batalha, request);
+
+        batalha.getJogador().setManaAtual(batalha.getJogador().getManaAtual() - request.getCustoMana());
+        aplicarHabilidade(batalha, request);
+
+        if (batalha.getInimigo().getVidaAtual() <= 0) {
+            finalizarComVitoria(batalha);
+        } else {
+            passarTurnoParaInimigo(batalha);
+            executarTurnoInimigo(batalha);
+        }
+
+        return batalhaRepository.save(batalha);
+    }
+
     public Batalha finalizarBatalha(Long id) {
         Batalha batalha = buscarBatalhaOuFalhar(id);
 
@@ -133,6 +166,10 @@ public class BatalhaService {
     }
 
     private void validarBatalhaEmAndamento(Batalha batalha) {
+        if (batalha.getStatus() == StatusBatalha.FINALIZADA) {
+            throw new BatalhaFinalizadaException(batalha.getId());
+        }
+
         if (batalha.getStatus() != StatusBatalha.EM_ANDAMENTO) {
             throw new TurnoInvalidoException("A batalha nao esta em andamento");
         }
@@ -146,11 +183,13 @@ public class BatalhaService {
 
     private void passarTurnoParaInimigo(Batalha batalha) {
         batalha.setTurnoAtual(Turno.INIMIGO);
+        registrarEvento(batalha, TipoEventoBatalha.TURNO_ALTERADO, "Turno alterado para INIMIGO");
     }
 
     private void passarTurnoParaJogador(Batalha batalha) {
         batalha.setTurnoAtual(Turno.JOGADOR);
         batalha.setRoundAtual(batalha.getRoundAtual() + 1);
+        registrarEvento(batalha, TipoEventoBatalha.TURNO_ALTERADO, "Turno alterado para JOGADOR");
     }
 
     private void executarTurnoInimigo(Batalha batalha) {
@@ -186,7 +225,7 @@ public class BatalhaService {
         batalha.setResultado(ResultadoBatalha.VITORIA);
         batalha.setFinalizadaEm(LocalDateTime.now());
 
-        registrarEvento(batalha, TipoEventoBatalha.INIMIGO_DERROTADO, "Inimigo derrotado");
+        registrarEvento(batalha, TipoEventoBatalha.INIMIGO_DERROTADO, "Vitoria: inimigo derrotado");
         registrarEvento(batalha, TipoEventoBatalha.BATALHA_FINALIZADA, "Batalha finalizada com vitoria");
         publicarEventoFinalizacao(batalha);
     }
@@ -196,9 +235,67 @@ public class BatalhaService {
         batalha.setResultado(ResultadoBatalha.DERROTA);
         batalha.setFinalizadaEm(LocalDateTime.now());
 
-        registrarEvento(batalha, TipoEventoBatalha.JOGADOR_DERROTADO, "Jogador derrotado");
+        registrarEvento(batalha, TipoEventoBatalha.JOGADOR_DERROTADO, "Derrota: jogador derrotado");
         registrarEvento(batalha, TipoEventoBatalha.BATALHA_FINALIZADA, "Batalha finalizada com derrota");
         publicarEventoFinalizacao(batalha);
+    }
+
+    private void validarHabilidade(HabilidadeRequest request) {
+        if (request == null || request.getNome() == null || request.getNome().isBlank()) {
+            throw new HabilidadeInvalidaException("Habilidade invalida");
+        }
+
+        if (request.getCustoMana() == null || request.getCustoMana() < 0) {
+            throw new HabilidadeInvalidaException("Custo de mana invalido");
+        }
+    }
+
+    private void validarMana(Batalha batalha, HabilidadeRequest request) {
+        if (batalha.getJogador().getManaAtual() < request.getCustoMana()) {
+            throw new HabilidadeInvalidaException("Mana insuficiente para usar a habilidade");
+        }
+    }
+
+    private void aplicarHabilidade(Batalha batalha, HabilidadeRequest request) {
+        String tipo = request.getTipo() == null ? "DANO" : request.getTipo().trim().toUpperCase();
+
+        switch (tipo) {
+            case "BUFF_ATAQUE" -> {
+                int bonus = valorOuPadrao(request.getDano(), 5);
+                new AtaqueBuffDecorator(batalha.getJogador(), bonus).aplicar();
+                registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
+                        request.getNome() + " aumentou ataque do jogador em " + bonus);
+            }
+            case "BUFF_DEFESA" -> {
+                int bonus = valorOuPadrao(request.getDano(), 5);
+                new DefesaBuffDecorator(batalha.getJogador(), bonus).aplicar();
+                registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
+                        request.getNome() + " aumentou defesa do jogador em " + bonus);
+            }
+            case "DEBUFF_DEFESA" -> {
+                int reducao = valorOuPadrao(request.getDano(), 5);
+                new DefesaDebuffDecorator(batalha.getInimigo(), reducao).aplicar();
+                registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
+                        request.getNome() + " reduziu defesa do inimigo em " + reducao);
+            }
+            case "MAGICA", "DANO_MAGICO" -> aplicarDanoDeHabilidade(batalha, request, magicalDamageStrategy);
+            case "DANO", "FISICA", "ATAQUE" -> aplicarDanoDeHabilidade(batalha, request, damageStrategy);
+            default -> throw new HabilidadeInvalidaException("Tipo de habilidade invalido: " + request.getTipo());
+        }
+    }
+
+    private void aplicarDanoDeHabilidade(Batalha batalha, HabilidadeRequest request, DamageStrategy strategy) {
+        int danoBase = strategy.calcularDano(batalha.getJogador(), batalha.getInimigo());
+        int dano = Math.max(danoBase + valorOuPadrao(request.getDano(), 0), 1);
+        int novaVidaInimigo = Math.max(batalha.getInimigo().getVidaAtual() - dano, 0);
+
+        batalha.getInimigo().setVidaAtual(novaVidaInimigo);
+        registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
+                request.getNome() + " causou " + dano + " de dano");
+    }
+
+    private int valorOuPadrao(Integer valor, int padrao) {
+        return valor == null ? padrao : valor;
     }
 
     private CombatenteSnapshot prepararJogador(Batalha batalha) {
@@ -206,17 +303,19 @@ public class BatalhaService {
             return batalha.getJogador();
         }
 
+        DadosCombatePersonagemResponse personagem = characterClient.buscarDadosCombate(batalha.getPersonagemId());
+
         return CombatenteSnapshot.builder()
-                .referenciaOriginalId(batalha.getPersonagemId())
-                .nome("Jogador")
+                .referenciaOriginalId(personagem.getId())
+                .nome(personagem.getNome())
                 .tipo("JOGADOR")
-                .vidaMaxima(100)
-                .vidaAtual(100)
-                .manaMaxima(50)
-                .manaAtual(50)
-                .ataque(20)
-                .defesa(10)
-                .nivel(1)
+                .vidaMaxima(personagem.getVidaMaxima())
+                .vidaAtual(personagem.getVidaMaxima())
+                .manaMaxima(personagem.getManaMaxima())
+                .manaAtual(personagem.getManaMaxima())
+                .ataque(personagem.getAtaque())
+                .defesa(personagem.getDefesa())
+                .nivel(personagem.getNivel())
                 .build();
     }
 

@@ -1,6 +1,5 @@
 package com.rpgturnos.combate.client;
 
-import com.rpgturnos.combate.client.dto.CharacterResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -19,9 +18,9 @@ public class CharacterClientImpl implements CharacterClient {
     }
 
     @Override
-    public CharacterResponse buscarPersonagemPorId(Long personagemId) {
-        String url = characterServiceUrl + "/characters/" + personagemId;
+    public DadosCombatePersonagemResponse buscarDadosCombate(Long personagemId) {
+        String url = characterServiceUrl + "/personagens/" + personagemId + "/dados-combate";
 
-        return restTemplate.getForObject(url, CharacterResponse.class);
+        return restTemplate.getForObject(url, DadosCombatePersonagemResponse.class);
     }
 }
