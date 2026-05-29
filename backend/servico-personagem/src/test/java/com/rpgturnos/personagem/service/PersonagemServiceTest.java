@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -55,7 +56,57 @@ class PersonagemServiceTest {
 
         assertThat(valor(dadosCombate, "getId")).isEqualTo(valor(criado, "getId"));
         assertThat(valor(dadosCombate, "getVidaMaxima")).isEqualTo(90);
+        assertThat(valor(dadosCombate, "getManaMaxima")).isEqualTo(60);
+        assertThat(valor(dadosCombate, "getAtaque")).isEqualTo(16);
+        assertThat(valor(dadosCombate, "getDefesa")).isEqualTo(12);
+        assertThat(valor(dadosCombate, "getForca")).isEqualTo(12);
+        assertThat(valor(dadosCombate, "getInteligencia")).isEqualTo(10);
+        assertThat(valor(dadosCombate, "getAgilidade")).isEqualTo(18);
         assertThat((List<?>) valor(dadosCombate, "getHabilidades")).hasSize(2);
+    }
+
+    @Test
+    void deveAdicionarExperienciaAoPersonagem() throws Exception {
+        Object personagemService = applicationContext.getBean("personagemService");
+        Object criado = criar(personagemService, criarRequest("Borin", "GUERREIRO"));
+        Object request = criarAtualizarExperienciaRequest(80);
+
+        Object atualizado = personagemService.getClass()
+                .getMethod("atualizarExperiencia", Long.class,
+                        Class.forName("com.rpgturnos.personagem.dto.AtualizarExperienciaRequest"))
+                .invoke(personagemService, valor(criado, "getId"), request);
+
+        assertThat(valor(atualizado, "getExperiencia")).isEqualTo(80);
+    }
+
+    @Test
+    void deveEvoluirPersonagemConsumindoExperiencia() throws Exception {
+        Object personagemService = applicationContext.getBean("personagemService");
+        Object criado = criar(personagemService, criarRequest("Borin", "GUERREIRO"));
+        Object request = criarAtualizarExperienciaRequest(120);
+        personagemService.getClass()
+                .getMethod("atualizarExperiencia", Long.class,
+                        Class.forName("com.rpgturnos.personagem.dto.AtualizarExperienciaRequest"))
+                .invoke(personagemService, valor(criado, "getId"), request);
+
+        Object evoluido = personagemService.getClass().getMethod("evoluir", Long.class)
+                .invoke(personagemService, valor(criado, "getId"));
+
+        assertThat(valor(evoluido, "getNivel")).isEqualTo(2);
+        assertThat(valor(evoluido, "getExperiencia")).isEqualTo(20);
+        assertThat(valor(evoluido, "getVidaMaxima")).isEqualTo(135);
+        assertThat(valor(evoluido, "getForca")).isEqualTo(21);
+    }
+
+    @Test
+    void naoDeveEvoluirSemExperienciaSuficiente() throws Exception {
+        Object personagemService = applicationContext.getBean("personagemService");
+        Object criado = criar(personagemService, criarRequest("Luna", "MAGO"));
+        Method evoluir = personagemService.getClass().getMethod("evoluir", Long.class);
+
+        assertThatThrownBy(() -> evoluir.invoke(personagemService, valor(criado, "getId")))
+                .hasCauseInstanceOf(IllegalArgumentException.class)
+                .hasRootCauseMessage("Experiencia insuficiente para evoluir. Necessario: 100, atual: 0");
     }
 
     private Object criar(Object personagemService, Object request) throws Exception {
@@ -72,6 +123,13 @@ class PersonagemServiceTest {
         requestClass.getMethod("setUsuarioId", Long.class).invoke(request, 10L);
         requestClass.getMethod("setNome", String.class).invoke(request, nome);
         requestClass.getMethod("setClasse", classePersonagem).invoke(request, classeEnum);
+        return request;
+    }
+
+    private Object criarAtualizarExperienciaRequest(Integer experiencia) throws Exception {
+        Class<?> requestClass = Class.forName("com.rpgturnos.personagem.dto.AtualizarExperienciaRequest");
+        Object request = requestClass.getConstructor().newInstance();
+        requestClass.getMethod("setExperiencia", Integer.class).invoke(request, experiencia);
         return request;
     }
 

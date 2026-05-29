@@ -29,6 +29,10 @@ public class HabilidadeService {
                 .toList();
     }
 
+    public List<HabilidadeResponse> listarPorClasse(String classe) {
+        return listarPorClasse(ClassePersonagem.from(classe));
+    }
+
     public List<HabilidadeResponse> listarDisponiveis(ClassePersonagem classe, Integer nivel) {
         return habilidadeRepository.findByClassePermitidaAndNivelNecessarioLessThanEqual(classe, nivel).stream()
                 .map(HabilidadeResponse::from)

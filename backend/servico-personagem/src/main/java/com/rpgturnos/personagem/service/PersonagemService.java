@@ -62,12 +62,15 @@ public class PersonagemService {
         Personagem personagem = buscarEntidadePorId(id);
         Integer experienciaNecessaria = personagem.getNivel() * 100;
 
-        if (personagem.getExperiencia() >= experienciaNecessaria) {
-            personagem.setExperiencia(personagem.getExperiencia() - experienciaNecessaria);
-            personagem.setNivel(personagem.getNivel() + 1);
-            aplicarAumentoPorClasse(personagem);
-            personagem = personagemRepository.save(personagem);
+        if (personagem.getExperiencia() < experienciaNecessaria) {
+            throw new IllegalArgumentException("Experiencia insuficiente para evoluir. Necessario: "
+                    + experienciaNecessaria + ", atual: " + personagem.getExperiencia());
         }
+
+        personagem.setExperiencia(personagem.getExperiencia() - experienciaNecessaria);
+        personagem.setNivel(personagem.getNivel() + 1);
+        aplicarAumentoPorClasse(personagem);
+        personagem = personagemRepository.save(personagem);
 
         return PersonagemResponse.from(personagem);
     }
