@@ -34,6 +34,18 @@ class PersonagemFactoryTest {
         assertThat((Integer) valor(personagem, "getAgilidade")).isGreaterThan((Integer) valor(personagem, "getDefesa"));
     }
 
+    @Test
+    void deveAceitarAliasesEmInglesParaClasses() throws Exception {
+        Class<?> classePersonagem = Class.forName("com.rpgturnos.personagem.model.ClassePersonagem");
+
+        assertThat(classePersonagem.getMethod("from", String.class).invoke(null, "WARRIOR").toString())
+                .isEqualTo("GUERREIRO");
+        assertThat(classePersonagem.getMethod("from", String.class).invoke(null, "MAGE").toString())
+                .isEqualTo("MAGO");
+        assertThat(classePersonagem.getMethod("from", String.class).invoke(null, "ARCHER").toString())
+                .isEqualTo("ARQUEIRO");
+    }
+
     private Object criarPersonagem(String nome, String classe) throws Exception {
         Class<?> classePersonagem = Class.forName("com.rpgturnos.personagem.model.ClassePersonagem");
         Class<?> factory = Class.forName("com.rpgturnos.personagem.factory.PersonagemFactory");

@@ -1,7 +1,6 @@
 package com.rpgturnos.personagem.controller;
 
 import com.rpgturnos.personagem.dto.HabilidadeResponse;
-import com.rpgturnos.personagem.model.ClassePersonagem;
 import com.rpgturnos.personagem.service.HabilidadeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +24,7 @@ public class HabilidadeController {
     }
 
     @GetMapping("/habilidades/classe/{classe}")
-    public ResponseEntity<List<HabilidadeResponse>> listarPorClasse(@PathVariable ClassePersonagem classe) {
+    public ResponseEntity<List<HabilidadeResponse>> listarPorClasse(@PathVariable String classe) {
         return ResponseEntity.ok(habilidadeService.listarPorClasse(classe));
     }
 

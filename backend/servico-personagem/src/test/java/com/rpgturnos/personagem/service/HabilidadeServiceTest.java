@@ -40,6 +40,17 @@ class HabilidadeServiceTest {
                 .contains("Flecha Precisa", "Disparo Duplo");
     }
 
+    @Test
+    void deveListarHabilidadesPorAliasDaClasse() throws Exception {
+        Object habilidadeService = applicationContext.getBean("habilidadeService");
+        List<?> habilidades = (List<?>) habilidadeService.getClass().getMethod("listarPorClasse", String.class)
+                .invoke(habilidadeService, "MAGE");
+
+        assertThat(habilidades).hasSize(2);
+        assertThat(habilidades).extracting(habilidade -> valor(habilidade, "getNome"))
+                .contains("Bola de Fogo", "Cura Arcana");
+    }
+
     private Object valor(Object target, String methodName) {
         try {
             return target.getClass().getMethod(methodName).invoke(target);
