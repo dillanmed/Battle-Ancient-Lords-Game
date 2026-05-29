@@ -1,4 +1,8 @@
 package com.rpgturnos.combate.model;
 
-public class StatusBatalha {
+public enum StatusBatalha {
+    CRIADA,
+    EM_ANDAMENTO,
+    FINALIZADA,
+    CANCELADA
 }

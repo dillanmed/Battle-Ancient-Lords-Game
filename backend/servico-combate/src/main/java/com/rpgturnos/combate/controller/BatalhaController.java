@@ -1,6 +1,10 @@
 package com.rpgturnos.combate.controller;
 
+import com.rpgturnos.combate.dto.BatalhaResponse;
+import com.rpgturnos.combate.dto.CriarBatalhaRequest;
+import com.rpgturnos.combate.dto.EventoBatalhaResponse;
 import com.rpgturnos.combate.facade.CombateFacade;
+import com.rpgturnos.combate.mapper.BatalhaMapper;
 import com.rpgturnos.combate.model.Batalha;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,48 +22,56 @@ public class BatalhaController {
     }
 
     @PostMapping
-    public ResponseEntity<Batalha> criarBatalha(@RequestBody Batalha batalha) {
+    public ResponseEntity<BatalhaResponse> criarBatalha(@RequestBody CriarBatalhaRequest request) {
+        Batalha novaBatalha = combateFacade.criarBatalha(BatalhaMapper.toEntity(request));
+        return ResponseEntity.ok(BatalhaMapper.toResponse(novaBatalha));
+    }
 
-        Batalha novaBatalha = combateFacade.iniciarBatalha(batalha);
-
-        return ResponseEntity.ok(novaBatalha);
+    @PostMapping("/{id}/iniciar")
+    public ResponseEntity<BatalhaResponse> iniciarBatalha(@PathVariable Long id) {
+        Batalha batalha = combateFacade.iniciarBatalha(id);
+        return ResponseEntity.ok(BatalhaMapper.toResponse(batalha));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Batalha> buscarPorId(@PathVariable Long id) {
-
+    public ResponseEntity<BatalhaResponse> buscarPorId(@PathVariable Long id) {
         return combateFacade.buscarBatalha(id)
+                .map(BatalhaMapper::toResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping
-    public ResponseEntity<List<Batalha>> listarBatalhas() {
-
-        return ResponseEntity.ok(combateFacade.listarBatalhas());
+    public ResponseEntity<List<BatalhaResponse>> listarBatalhas() {
+        return ResponseEntity.ok(combateFacade.listarBatalhas()
+                .stream()
+                .map(BatalhaMapper::toResponse)
+                .toList());
     }
 
     @PostMapping("/{id}/atacar")
-    public ResponseEntity<Batalha> atacar(@PathVariable Long id) {
-
+    public ResponseEntity<BatalhaResponse> atacar(@PathVariable Long id) {
         Batalha batalha = combateFacade.atacar(id);
-
-        return ResponseEntity.ok(batalha);
+        return ResponseEntity.ok(BatalhaMapper.toResponse(batalha));
     }
 
     @PostMapping("/{id}/defender")
-    public ResponseEntity<Batalha> defender(@PathVariable Long id) {
-
+    public ResponseEntity<BatalhaResponse> defender(@PathVariable Long id) {
         Batalha batalha = combateFacade.defender(id);
-
-        return ResponseEntity.ok(batalha);
+        return ResponseEntity.ok(BatalhaMapper.toResponse(batalha));
     }
 
     @PostMapping("/{id}/finalizar")
-    public ResponseEntity<Batalha> finalizarBatalha(@PathVariable Long id) {
-
+    public ResponseEntity<BatalhaResponse> finalizarBatalha(@PathVariable Long id) {
         Batalha batalha = combateFacade.finalizarBatalha(id);
+        return ResponseEntity.ok(BatalhaMapper.toResponse(batalha));
+    }
 
-        return ResponseEntity.ok(batalha);
+    @GetMapping("/{id}/eventos")
+    public ResponseEntity<List<EventoBatalhaResponse>> listarEventos(@PathVariable Long id) {
+        return ResponseEntity.ok(combateFacade.listarEventos(id)
+                .stream()
+                .map(BatalhaMapper::toResponse)
+                .toList());
     }
 }

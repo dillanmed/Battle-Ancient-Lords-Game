@@ -1,23 +1,32 @@
 package com.rpgturnos.combate.facade;
 
-import com.rpgturnos.combate.model.Batalha;
-import com.rpgturnos.combate.service.BatalhaService;
-import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.stereotype.Component;
+
+import com.rpgturnos.combate.model.Batalha;
+import com.rpgturnos.combate.model.EventoBatalha;
+import com.rpgturnos.combate.service.BatalhaService;
+import com.rpgturnos.combate.service.EventoBatalhaService;
 
 @Component
 public class CombateFacade {
 
     private final BatalhaService batalhaService;
+    private final EventoBatalhaService eventoBatalhaService;
 
-    public CombateFacade(BatalhaService batalhaService) {
+    public CombateFacade(BatalhaService batalhaService, EventoBatalhaService eventoBatalhaService) {
         this.batalhaService = batalhaService;
+        this.eventoBatalhaService = eventoBatalhaService;
     }
 
-    public Batalha iniciarBatalha(Batalha batalha) {
+    public Batalha criarBatalha(Batalha batalha) {
         return batalhaService.criarBatalha(batalha);
+    }
+
+    public Batalha iniciarBatalha(Long id) {
+        return batalhaService.iniciarBatalha(id);
     }
 
     public Optional<Batalha> buscarBatalha(Long id) {
@@ -38,5 +47,9 @@ public class CombateFacade {
 
     public Batalha finalizarBatalha(Long id) {
         return batalhaService.finalizarBatalha(id);
+    }
+
+    public List<EventoBatalha> listarEventos(Long batalhaId) {
+        return eventoBatalhaService.listarPorBatalha(batalhaId);
     }
 }
