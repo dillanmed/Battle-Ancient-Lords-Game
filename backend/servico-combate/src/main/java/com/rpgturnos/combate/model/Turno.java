@@ -1,4 +1,6 @@
 package com.rpgturnos.combate.model;
 
-public class Turno {
+public enum Turno {
+    JOGADOR,
+    INIMIGO
 }
