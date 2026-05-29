@@ -1,24 +1,5 @@
-Thu May 28 16:50:59 BRT 2026 Main Update Loop threw an exception:
-java.lang.NullPointerException: Cannot invoke "java.awt.image.VolatileImage.validate(java.awt.GraphicsConfiguration)" because "this.backBuffers[...]" is null
-	at java.desktop/java.awt.Component$BltBufferStrategy.revalidate(Component.java:4552)
-	at java.desktop/java.awt.Component$BltBufferStrategy.revalidate(Component.java:4529)
-	at java.desktop/java.awt.Component$BltBufferStrategy.getDrawGraphics(Component.java:4449)
-	at de.gurkenlabs.litiengine.graphics.RenderComponent.render(RenderComponent.java:108)
+Thu May 28 23:02:35 BRT 2026 Main Update Loop threw an exception:
+java.lang.NullPointerException: Cannot invoke "de.gurkenlabs.litiengine.GameWindow.cursor()" because the return value of "de.gurkenlabs.litiengine.Game.window()" is null
+	at de.gurkenlabs.litiengine.graphics.RenderComponent.render(RenderComponent.java:138)
 	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:93)
 	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
-
-====Runtime Information====
-Operating System: Windows 11
-	Architecture: amd64
-	Version: 10.0
-Memory:
-	Max heap size: 1,9 GiB
-	Current heap size: 124,0 MiB
-	Heap used: 92,7 MiB
-	Free heap: 31,3 MiB
-Java Version: OpenJDK Runtime Environment 17.0.19+10 
-	Vendor: Eclipse Adoptium
-Uptime: PT2.635S
-Screens: 1
-	Screen 0: 1366x768@60hz
-
