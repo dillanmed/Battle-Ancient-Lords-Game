@@ -1,15 +1,11 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres.egnbgiknsyzojqfddxyt}
-    password: ${SPRING_DATASOURCE_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require
+    username: postgres.egnbgiknsyzojqfddxyt
+    password: ${SUPABASE_DB_PASSWORD}
     hikari:
-      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE:2}
-      minimum-idle: ${SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE:0}
-      idle-timeout: ${SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT:30000}
-      max-lifetime: ${SPRING_DATASOURCE_HIKARI_MAX_LIFETIME:600000}
-      connection-timeout: ${SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT:30000}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:4}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
 
   jpa:
     hibernate:

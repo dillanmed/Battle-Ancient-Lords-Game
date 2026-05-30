@@ -2,8 +2,15 @@ spring:
   application:
     name: servico-combate
 
+  profiles:
+    active: postgres
+
+  sql:
+    init:
+      mode: never
+
 server:
-  port: ${SERVER_PORT:8084}
+  port: ${SERVER_PORT:8083}
 
 services:
   character-service:
