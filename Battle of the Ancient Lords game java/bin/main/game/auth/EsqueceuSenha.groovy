@@ -6,15 +6,7 @@ import de.gurkenlabs.litiengine.input.Input
 import game.services.ServiceRegistry
 
 import javax.imageio.ImageIO
-import java.awt.BasicStroke
-import java.awt.Color
-import java.awt.Cursor
-import java.awt.Font
-import java.awt.FontMetrics
-import java.awt.GraphicsEnvironment
-import java.awt.Graphics2D
-import java.awt.Point
-import java.awt.Rectangle
+import java.awt.*
 import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
 
@@ -61,7 +53,11 @@ class EsqueceuSenha extends Screen {
         try {
             background = loadImage('/assets/esqueceuSenha/fundo_tela_esqueceusenha.png')
             confirmarButtonImage = loadImage('/assets/configuracoes/btn_confirmar.png')
-            medievalFont = Font.createFont(Font.TRUETYPE_FONT, resource('/assets/fontes/Cinzel-Bold.ttf')).deriveFont(30f)
+            medievalFont = Font.createFont(
+                    Font.TRUETYPE_FONT,
+                    resource('/assets/fontes/Cinzel-Bold.ttf')
+            ).deriveFont(30f)
+
             GraphicsEnvironment.localGraphicsEnvironment.registerFont(medievalFont)
         } catch (Exception exception) {
             println "Erro ao carregar assets de recuperacao de senha: ${exception.message}"
@@ -75,23 +71,22 @@ class EsqueceuSenha extends Screen {
 
     private InputStream resource(String path) {
         InputStream stream = getClass().getResourceAsStream(path)
+
         if (stream == null) {
             throw new FileNotFoundException(path)
         }
+
         stream
     }
 
     private void setupKeyboardInput() {
         Input.keyboard().onKeyTyped { event ->
-            if (!isCurrentScreen()) {
-                return
-            }
-
-            if (!emailSelecionado) {
+            if (!isCurrentScreen() || !emailSelecionado) {
                 return
             }
 
             char c = event.keyChar
+
             if (c == KeyEvent.CHAR_UNDEFINED || Character.isISOControl(c)) {
                 return
             }
@@ -112,7 +107,11 @@ class EsqueceuSenha extends Screen {
                 return
             }
 
-            if (event.keyCode == KeyEvent.VK_BACK_SPACE && emailSelecionado && email.length() > 0) {
+            if (
+                    event.keyCode == KeyEvent.VK_BACK_SPACE &&
+                    emailSelecionado &&
+                    email.length() > 0
+            ) {
                 email = email.substring(0, email.length() - 1)
             }
         }
@@ -206,8 +205,15 @@ class EsqueceuSenha extends Screen {
         renderBotaoVoltar(g)
 
         g.font = medievalFont.deriveFont(34f)
+
         String titulo = 'Digite seu e-mail para recuperar sua senha'
-        drawOutlinedText(g, titulo, centeredTextX(g, titulo, screenWidth.intdiv(2)), scaledY(screenHeight, 240), Color.WHITE)
+        drawOutlinedText(
+                g,
+                titulo,
+                centeredTextX(g, titulo, screenWidth.intdiv(2)),
+                scaledY(screenHeight, 240),
+                Color.WHITE
+        )
 
         int inputWidth = Math.min(620, Math.max(320, (int) (screenWidth * 0.48)))
         int inputHeight = 65
@@ -223,12 +229,20 @@ class EsqueceuSenha extends Screen {
         int confirmarY = scaledY(screenHeight, 470)
 
         if (confirmarButtonImage != null) {
-            g.drawImage(confirmarButtonImage, confirmarX, confirmarY, confirmarWidth, confirmarHeight, null)
+            g.drawImage(
+                    confirmarButtonImage,
+                    confirmarX,
+                    confirmarY,
+                    confirmarWidth,
+                    confirmarHeight,
+                    null
+            )
         } else {
             drawFallbackButton(g, confirmarX, confirmarY, confirmarWidth, confirmarHeight)
         }
 
         confirmarRect = new Rectangle(confirmarX, confirmarY, confirmarWidth, confirmarHeight)
+
         renderPopup(g, screenWidth, screenHeight)
     }
 
@@ -244,20 +258,28 @@ class EsqueceuSenha extends Screen {
 
     private void renderBotaoVoltar(Graphics2D g) {
         g.font = medievalFont.deriveFont(22f)
+
         String texto = '< Voltar'
         FontMetrics metrics = g.fontMetrics
+
         int x = 55
         int y = 75
 
         drawOutlinedText(g, texto, x, y, Color.WHITE)
-        voltarRect = new Rectangle(x - 10, y - 30, metrics.stringWidth(texto) + 20, 40)
+
+        voltarRect = new Rectangle(
+                x - 10,
+                y - 30,
+                metrics.stringWidth(texto) + 20,
+                40
+        )
     }
 
     private void drawInputBox(Graphics2D g, Rectangle rect, String texto, boolean selecionado) {
-        int rectX = rect.@x
-        int rectY = rect.@y
-        int rectWidth = rect.@width
-        int rectHeight = rect.@height
+        int rectX = rect.x
+        int rectY = rect.y
+        int rectWidth = rect.width
+        int rectHeight = rect.height
 
         g.color = new Color(35, 25, 15, 220)
         g.fillRoundRect(rectX, rectY, rectWidth, rectHeight, 18, 18)
@@ -267,8 +289,10 @@ class EsqueceuSenha extends Screen {
         g.drawRoundRect(rectX, rectY, rectWidth, rectHeight, 18, 18)
 
         g.font = new Font('Arial', Font.BOLD, 20)
+
         FontMetrics metrics = g.fontMetrics
         String textoExibido = texto ?: 'E-mail'
+
         int textX = rectX + 20
         int textY = rectY + (rectHeight - metrics.height).intdiv(2) + metrics.ascent
 
@@ -283,9 +307,16 @@ class EsqueceuSenha extends Screen {
     private void drawFallbackButton(Graphics2D g, int x, int y, int width, int height) {
         g.color = new Color(105, 73, 32)
         g.fillRoundRect(x, y, width, height, 12, 12)
-        g.color = Color.WHITE
+
         g.font = medievalFont.deriveFont(22f)
-        drawOutlinedText(g, 'Confirmar', centeredTextX(g, 'Confirmar', x + width.intdiv(2)), y + 52, Color.WHITE)
+
+        drawOutlinedText(
+                g,
+                'Confirmar',
+                centeredTextX(g, 'Confirmar', x + width.intdiv(2)),
+                y + 52,
+                Color.WHITE
+        )
     }
 
     private void renderPopup(Graphics2D g, int screenWidth, int screenHeight) {
@@ -299,16 +330,40 @@ class EsqueceuSenha extends Screen {
         }
 
         g.font = new Font('Arial', Font.BOLD, 18)
+
         FontMetrics metrics = g.fontMetrics
+
         int x = (screenWidth - metrics.stringWidth(mensagemPopup)).intdiv(2)
         int y = scaledY(screenHeight, 445)
 
-        g.color = popupSucesso ? new Color(40, 120, 40, 220) : new Color(120, 40, 40, 220)
-        g.fillRoundRect(x - 20, y - 28, metrics.stringWidth(mensagemPopup) + 40, 40, 15, 15)
+        g.color = popupSucesso
+                ? new Color(40, 120, 40, 220)
+                : new Color(120, 40, 40, 220)
 
-        g.color = popupSucesso ? new Color(180, 220, 180) : new Color(220, 160, 160)
+        g.fillRoundRect(
+                x - 20,
+                y - 28,
+                metrics.stringWidth(mensagemPopup) + 40,
+                40,
+                15,
+                15
+        )
+
+        g.color = popupSucesso
+                ? new Color(180, 220, 180)
+                : new Color(220, 160, 160)
+
         g.stroke = new BasicStroke(2)
-        g.drawRoundRect(x - 20, y - 28, metrics.stringWidth(mensagemPopup) + 40, 40, 15, 15)
+
+        g.drawRoundRect(
+                x - 20,
+                y - 28,
+                metrics.stringWidth(mensagemPopup) + 40,
+                40,
+                15,
+                15
+        )
+
         drawOutlinedText(g, mensagemPopup, x, y, Color.WHITE)
     }
 
@@ -326,6 +381,7 @@ class EsqueceuSenha extends Screen {
         g.drawString(text, x + 1, y - 1)
         g.drawString(text, x - 1, y + 1)
         g.drawString(text, x + 1, y + 1)
+
         g.color = mainColor
         g.drawString(text, x, y)
     }
