@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require
+    username: postgres.egnbgiknsyzojqfddxyt
+    password: ${SUPABASE_DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8081
