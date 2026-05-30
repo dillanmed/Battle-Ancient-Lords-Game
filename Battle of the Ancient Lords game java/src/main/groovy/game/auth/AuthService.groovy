@@ -27,7 +27,7 @@ class AuthService {
 
     Usuario cadastrar(String nome, String email, String password) {
         Map response = apiClient.post('/api/auth/cadastro', [
-                login: nome?.trim(),
+                nome: nome?.trim(),
                 email: email?.trim(),
                 senha: password
         ])

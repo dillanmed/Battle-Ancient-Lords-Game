@@ -15,8 +15,10 @@ import java.awt.GraphicsEnvironment
 import java.awt.Graphics2D
 import java.awt.Point
 import java.awt.Rectangle
+import java.awt.Image
 import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
+<<<<<<< HEAD
 
 class EsqueceuSenha extends Screen {
     private BufferedImage background
@@ -30,13 +32,34 @@ class EsqueceuSenha extends Screen {
     private boolean mostrarPopup = false
     private boolean popupSucesso = false
     private long tempoPopup = 0
+=======
+
+import javax.imageio.ImageIO
+
+class EsqueceuSenha extends Screen {
+
+    private String email = ''
+    private String mensagem = ''
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
 
     private Rectangle emailRect
     private Rectangle confirmarRect
     private Rectangle voltarRect
+<<<<<<< HEAD
+=======
+
+    private boolean typingEmail = false
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
+
+    // =========================================
+    // BACKGROUND
+    // =========================================
+    private BufferedImage background
 
     EsqueceuSenha() {
+
         super('esqueceuSenha')
+<<<<<<< HEAD
         loadAssets()
         setupKeyboardInput()
         setupMouseInput()
@@ -82,13 +105,57 @@ class EsqueceuSenha extends Screen {
     }
 
     private void setupKeyboardInput() {
+=======
+
+        loadBackground()
+
+        setupInput()
+    }
+
+    // =========================================
+// CARREGA O BACKGROUND DO JOGO
+// =========================================
+    private void loadBackground() {
+
+        try {
+
+            background = ImageIO.read(
+                    new File(
+                            "src/main/resources/Background/Background do jogo.png"
+                    )
+            )
+
+            println "[ESQUECEU SENHA] Background carregado com sucesso!"
+
+        } catch (Exception e) {
+
+            println "[ERRO] Falha ao carregar background:"
+            e.printStackTrace()
+        }
+    }
+
+    private void setupInput() {
+
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
         Input.keyboard().onKeyTyped { event ->
+
             if (!isCurrentScreen()) {
                 return
             }
 
+<<<<<<< HEAD
             if (!emailSelecionado) {
                 return
+=======
+            if (!typingEmail) {
+                return
+            }
+
+            char c = event.keyChar
+
+            if (!Character.isISOControl(c)) {
+                email += c
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
             }
 
             char c = event.keyChar
@@ -108,46 +175,111 @@ class EsqueceuSenha extends Screen {
         }
 
         Input.keyboard().onKeyReleased { event ->
+
             if (!isCurrentScreen()) {
                 return
             }
 
+<<<<<<< HEAD
             if (event.keyCode == KeyEvent.VK_BACK_SPACE && emailSelecionado && email.length() > 0) {
                 email = email.substring(0, email.length() - 1)
+=======
+            if (!typingEmail) {
+                return
+            }
+
+            if (
+                    event.keyCode == KeyEvent.VK_BACK_SPACE &&
+                            email.length() > 0
+            ) {
+
+                email = email.substring(
+                        0,
+                        email.length() - 1
+                )
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
             }
         }
     }
 
     private void setupMouseInput() {
         Input.mouse().onMoved { event ->
+<<<<<<< HEAD
             if (isCurrentScreen()) {
                 updateCursor(event.point)
             }
-        }
+=======
 
-        Input.mouse().onClicked { event ->
             if (!isCurrentScreen()) {
                 return
             }
 
+            boolean overAction =
+                    emailRect?.contains(event.point) ||
+                            confirmarRect?.contains(event.point) ||
+                            voltarRect?.contains(event.point)
+
+            Game.window().renderComponent.cursor =
+                    overAction
+                            ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                            : Cursor.getDefaultCursor()
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
+        }
+
+        Input.mouse().onClicked { event ->
+
+            if (!isCurrentScreen()) {
+                return
+            }
+
+<<<<<<< HEAD
             Point mousePosition = event.point
 
             if (voltarRect?.contains(mousePosition)) {
                 emailSelecionado = false
-                Game.screens().display('login')
+=======
+            // INPUT EMAIL
+            if (emailRect?.contains(event.point)) {
+
+                typingEmail = true
                 return
             }
 
+            // BOTAO VOLTAR
+            if (voltarRect?.contains(event.point)) {
+
+                typingEmail = false
+
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
+                Game.screens().display('login')
+
+                return
+            }
+
+<<<<<<< HEAD
             emailSelecionado = emailRect?.contains(mousePosition) ?: false
 
             if (confirmarRect?.contains(mousePosition)) {
                 validarEmail()
+=======
+            // BOTAO CONFIRMAR
+            if (confirmarRect?.contains(event.point)) {
+
+                typingEmail = false
+
+                ServiceRegistry.authService
+                        .solicitarRecuperacaoSenha(email)
+
+                mensagem =
+                        'Se o e-mail existir, enviaremos as instrucoes.'
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)
             }
         }
     }
 
     private boolean isCurrentScreen() {
-        Game.screens().current()?.name == name
+
+        return Game.screens().current()?.name == name
     }
 
     private void validarEmail() {
@@ -197,8 +329,10 @@ class EsqueceuSenha extends Screen {
 
     @Override
     void render(Graphics2D g) {
+
         super.render(g)
 
+<<<<<<< HEAD
         int screenWidth = Game.window().width
         int screenHeight = Game.window().height
 
@@ -330,3 +464,176 @@ class EsqueceuSenha extends Screen {
         g.drawString(text, x, y)
     }
 }
+=======
+        int width = Game.window().width as int
+        int height = Game.window().height as int
+
+        // =========================================
+        // BACKGROUND
+        // =========================================
+
+        if (background != null) {
+
+            g.drawImage(
+                    background,
+                    0,
+                    0,
+                    width,
+                    height,
+                    null
+            )
+
+        } else {
+
+            g.setColor(new Color(15, 15, 25))
+            g.fillRect(0, 0, width, height)
+        }
+
+        // ESCURECIMENTO
+        g.setColor(new Color(0, 0, 0, 150))
+        g.fillRect(0, 0, width, height)
+
+        // =========================================
+        // TITULO
+        // =========================================
+
+        g.setFont(new Font("Arial", Font.BOLD, 42))
+        g.setColor(Color.WHITE)
+
+        g.drawString(
+                "RECUPERAR SENHA",
+                (width / 2 - 220) as int,
+                120
+        )
+
+        // =========================================
+        // INPUT EMAIL
+        // =========================================
+
+        emailRect = new Rectangle(
+                (width / 2 - 250) as int,
+                220,
+                500,
+                55
+        )
+
+        g.setColor(new Color(35, 35, 50, 230))
+
+        g.fillRoundRect(
+                emailRect.x as int,
+                emailRect.y as int,
+                emailRect.width as int,
+                emailRect.height as int,
+                12,
+                12
+        )
+
+        g.setColor(
+                typingEmail
+                        ? new Color(90, 170, 255)
+                        : Color.WHITE
+        )
+
+        g.drawRoundRect(
+                emailRect.x as int,
+                emailRect.y as int,
+                emailRect.width as int,
+                emailRect.height as int,
+                12,
+                12
+        )
+
+        g.setFont(new Font("Arial", Font.PLAIN, 22))
+
+        String texto =
+                email.isEmpty()
+                        ? "Digite seu email..."
+                        : email
+
+        g.drawString(
+                texto,
+                (emailRect.x + 15) as int,
+                (emailRect.y + 35) as int
+        )
+
+        // =========================================
+        // BOTAO CONFIRMAR
+        // =========================================
+
+        confirmarRect = new Rectangle(
+                (width / 2 - 250) as int,
+                320,
+                220,
+                55
+        )
+
+        g.setColor(new Color(50, 120, 255))
+
+        g.fillRoundRect(
+                confirmarRect.x as int,
+                confirmarRect.y as int,
+                confirmarRect.width as int,
+                confirmarRect.height as int,
+                12,
+                12
+        )
+
+        g.setColor(Color.WHITE)
+
+        g.setFont(new Font("Arial", Font.BOLD, 22))
+
+        g.drawString(
+                "CONFIRMAR",
+                (confirmarRect.x + 42) as int,
+                (confirmarRect.y + 35) as int
+        )
+
+        // =========================================
+        // BOTAO VOLTAR
+        // =========================================
+
+        voltarRect = new Rectangle(
+                (width / 2 + 30) as int,
+                320,
+                220,
+                55
+        )
+
+        g.setColor(new Color(180, 60, 60))
+
+        g.fillRoundRect(
+                voltarRect.x as int,
+                voltarRect.y as int,
+                voltarRect.width as int,
+                voltarRect.height as int,
+                12,
+                12
+        )
+
+        g.setColor(Color.WHITE)
+
+        g.drawString(
+                "VOLTAR",
+                (voltarRect.x + 65) as int,
+                (voltarRect.y + 35) as int
+        )
+
+        // =========================================
+        // MENSAGEM
+        // =========================================
+
+        if (!mensagem.isEmpty()) {
+
+            g.setColor(new Color(120, 255, 120))
+
+            g.setFont(new Font("Arial", Font.BOLD, 20))
+
+            g.drawString(
+                    mensagem,
+                    (width / 2 - 260) as int,
+                    430
+            )
+        }
+    }
+}
+>>>>>>> dfe666c (atualização do jogo inventario tela esqueceu senha e sons de habilidades dos outros personagens)

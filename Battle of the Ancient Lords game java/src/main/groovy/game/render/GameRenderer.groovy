@@ -1,5 +1,7 @@
 package game.render
 
+import game.inventory.Item
+import game.inventory.inventario
 import game.Main
 import game.effects.FloatingText
 
@@ -10,6 +12,9 @@ import java.awt.Composite
 import java.awt.Font
 import java.awt.GradientPaint
 import java.awt.Graphics2D
+import java.awt.Rectangle
+import java.awt.FontMetrics
+import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.util.Iterator
 import java.util.List
@@ -142,64 +147,256 @@ class GameRenderer extends Main {
         }
     }
 
-    static void renderInventory(Graphics2D g) {
-        // Renderiza o fundo de batalha levemente escurecido por trÃƒÂ¡s do inventÃƒÂ¡rio
-        int bgIndex = Math.min(Math.max(0, currentPhase - 1), 5)
-        if (phaseBackgrounds[bgIndex] != null) g.drawImage(phaseBackgrounds[bgIndex], 0, 0, WIDTH, HEIGHT, null)
+    static void renderInventario(Graphics2D g) {
 
-        g.setColor(new Color(0, 0, 0, 160))
-        g.fillRect(0, 0, WIDTH, HEIGHT)
+        // =========================================
+        // ANTI ALIASING
+        // =========================================
+        g.setRenderingHint(
+                RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON
+        )
 
-        // Moldura do painel central
-        int invWidth = 650
-        int invHeight = 500
-        int invX = (WIDTH - invWidth) / 2
-        int invY = (HEIGHT - invHeight) / 2
+        // =========================================
+        // FUNDO ESCURO
+        // =========================================
+        g.setColor(new Color(0, 0, 0, 210))
+        g.fillRect(0, 0, Main.WIDTH, Main.HEIGHT)
 
-        g.setColor(new Color(25, 25, 35, 245))
-        g.fillRoundRect(invX, invY, invWidth, invHeight, 20, 20)
-        g.setColor(new Color(130, 110, 75)) // Borda Dourada Envelhecida
+        // =========================================
+        // PAINEL PRINCIPAL
+        // =========================================
+        int panelWidth = 900
+        int panelHeight = 650
+
+        int panelX = (Main.WIDTH - panelWidth) / 2
+        int panelY = (Main.HEIGHT - panelHeight) / 2
+
+        GradientPaint gradient = new GradientPaint(
+                panelX,
+                panelY,
+                new Color(35, 35, 45),
+                panelX,
+                panelY + panelHeight,
+                new Color(10, 10, 18)
+        )
+
+        g.setPaint(gradient)
+
+        g.fillRoundRect(
+                panelX,
+                panelY,
+                panelWidth,
+                panelHeight,
+                30,
+                30
+        )
+
+        // =========================================
+        // BORDA
+        // =========================================
         g.setStroke(new BasicStroke(4))
-        g.drawRoundRect(invX, invY, invWidth, invHeight, 20, 20)
 
-        // TÃƒÂ­tulo do Painel
-        g.setColor(Color.ORANGE)
-        g.setFont(getGameFont(Font.BOLD, 38f))
-        g.drawString("BAU DE ITENS (INVENTARIO)", invX + 65, invY + 60)
+        g.setColor(new Color(180, 140, 60))
 
-        g.setColor(Color.GRAY)
-        g.setStroke(new BasicStroke(2))
-        g.drawLine(invX + 40, invY + 85, invX + invWidth - 40, invY + 85)
+        g.drawRoundRect(
+                panelX,
+                panelY,
+                panelWidth,
+                panelHeight,
+                30,
+                30
+        )
 
-        // Render da lista de slots/itens (Estilo Grid em lista)
-        g.setFont(getGameFont(Font.BOLD, 22f))
-        for (int i = 0; i < inventoryItems.size(); i++) {
-            int slotY = invY + 120 + (i * 50)
+        // =========================================
+        // TITULO
+        // =========================================
+        g.setFont(new Font("Serif", Font.BOLD, 44))
 
-            // Fundo do slot
-            g.setColor(new Color(45, 45, 55, 200))
-            g.fillRoundRect(invX + 50, slotY, invWidth - 100, 42, 8, 8)
-            g.setColor(new Color(75, 75, 95))
-            g.drawRoundRect(invX + 50, slotY, invWidth - 100, 42, 8, 8)
+        g.setColor(new Color(255, 220, 120))
 
-            // Indicador GenÃƒÂ©rico de Sprite (ÃƒÂcone falso)
-            g.setColor(Color.LIGHT_GRAY)
-            g.fillRect(invX + 65, slotY + 9, 24, 24)
-            g.setColor(Color.BLACK)
-            g.drawRect(invX + 65, slotY + 9, 24, 24)
+        String titulo = "INVENTARIO"
 
-            // Texto do Item e sua quantidade
+        FontMetrics tituloMetrics = g.getFontMetrics()
+
+        int tituloWidth = tituloMetrics.stringWidth(titulo)
+
+        g.drawString(
+                titulo,
+                (panelX + (panelWidth / 2) - (tituloWidth / 2)) as int,
+                panelY + 60
+        )
+
+        // =========================================
+        // LISTA DE ITENS
+        // =========================================
+        int startY = panelY + 140
+
+        if (inventario.items.isEmpty()) {
+
+            g.setFont(new Font("Arial", Font.PLAIN, 28))
             g.setColor(Color.WHITE)
-            g.drawString(inventoryItems[i], invX + 110, slotY + 28)
 
-            g.setColor(Color.YELLOW)
-            g.drawString("x" + inventoryQuantities[i], invX + invWidth - 110, slotY + 28)
+            g.drawString(
+                    "Inventario vazio.",
+                    panelX + 80,
+                    startY
+            )
+
+        } else {
+
+            inventario.items.eachWithIndex { Item item, int index ->
+
+                // =========================================
+                // POSICAO ITEM
+                // =========================================
+                int itemY = startY + (index * 100)
+
+                int caixaX = panelX + 50
+                int caixaY = itemY - 45
+
+                int caixaWidth = 780
+                int caixaHeight = 75
+
+                // =========================================
+                // CAIXA ITEM
+                // =========================================
+                g.setColor(new Color(55, 55, 75, 230))
+
+                g.fillRoundRect(
+                        caixaX,
+                        caixaY,
+                        caixaWidth,
+                        caixaHeight,
+                        18,
+                        18
+                )
+
+                // =========================================
+                // BORDA ITEM
+                // =========================================
+                g.setColor(new Color(90, 90, 120))
+
+                g.drawRoundRect(
+                        caixaX,
+                        caixaY,
+                        caixaWidth,
+                        caixaHeight,
+                        18,
+                        18
+                )
+
+                // =========================================
+                // NOME ITEM
+                // =========================================
+                g.setFont(new Font("Arial", Font.BOLD, 26))
+
+                g.setColor(new Color(255, 230, 150))
+
+                g.drawString(
+                        item.nome,
+                        caixaX + 30,
+                        caixaY + 30
+                )
+
+                // =========================================
+                // QUANTIDADE
+                // =========================================
+                g.setFont(new Font("Arial", Font.BOLD, 24))
+
+                g.setColor(Color.CYAN)
+
+                g.drawString(
+                        "x${item.quantidade}",
+                        caixaX + 630,
+                        caixaY + 35
+                )
+
+                // =========================================
+                // DESCRICAO
+                // =========================================
+                g.setFont(new Font("Arial", Font.PLAIN, 18))
+
+                g.setColor(Color.LIGHT_GRAY)
+
+                g.drawString(
+                        item.descricao,
+                        caixaX + 30,
+                        caixaY + 58
+                )
+            }
         }
 
-        // RodapÃƒÂ© de instruÃƒÂ§ÃƒÂµes
-        g.setColor(Color.LIGHT_GRAY)
-        g.setFont(getGameFont(Font.PLAIN, 18f))
-        g.drawString("Pressione 'N' para fechar e retornar a batalha", invX + 115, invY + invHeight - 30)
+        // =========================================
+        // TEXTO FECHAR INVENTARIO
+        // =========================================
+        String fecharTexto = "N = FECHAR INVENTARIO"
+
+        g.setFont(new Font("Arial", Font.BOLD, 24))
+
+        FontMetrics metrics = g.getFontMetrics()
+
+        int textoWidth = metrics.stringWidth(fecharTexto)
+
+        g.setColor(Color.WHITE)
+
+        g.drawString(
+                fecharTexto,
+                (panelX + (panelWidth / 2) - (textoWidth / 2)) as int,
+                panelY + 610
+        )
+    }
+
+    static void renderitem(
+            Graphics2D g,
+            Item item,
+            int x,
+            int y
+    ) {
+
+        // Fundo do item
+        g.setColor(new Color(40, 40, 40, 200))
+
+        g.fillRoundRect(
+                x,
+                y,
+                500,
+                55,
+                15,
+                15
+        )
+
+        // Borda
+        g.setColor(new Color(255, 215, 0))
+
+        g.drawRoundRect(
+                x,
+                y,
+                500,
+                55,
+                15,
+                15
+        )
+
+        // Nome
+        g.setFont(new Font("Arial", Font.BOLD, 22))
+
+        g.drawString(
+                item.nome,
+                x + 20,
+                y + 25
+        )
+
+        // Quantidade
+        g.setFont(new Font("Arial", Font.PLAIN, 18))
+
+        g.setColor(Color.WHITE)
+
+        g.drawString(
+                "Quantidade: x${item.quantidade}",
+                x + 20,
+                y + 45
+        )
     }
 
     static void renderBattle(Graphics2D g) {

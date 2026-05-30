@@ -1,8 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://SEU_HOST.supabase.com:5432/postgres?user=SEU_USER&password=SUA_SENHA
-    username: USER
-    password: PASSWORD
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://SEU_HOST.supabase.com:5432/postgres?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:SEU_USER}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
