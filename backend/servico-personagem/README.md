@@ -48,7 +48,7 @@ O log deve indicar que o profile `supabase` esta ativo. Mais detalhes estao em `
 .\mvnw.cmd package
 ```
 
-Os testes usam profile `test` com H2 em memoria.
+Os testes usam profile `test` com PostgreSQL configurado por variaveis de ambiente.
 
 ## Classes aceitas
 
