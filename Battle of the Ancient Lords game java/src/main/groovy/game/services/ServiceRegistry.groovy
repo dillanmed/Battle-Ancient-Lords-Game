@@ -17,7 +17,7 @@ class ServiceRegistry {
     )
 
     static final PersonagemService personagemService = new PersonagemService(
-            new ApiClient('http://localhost:8082', tokenHandler)
+            new ApiClient('http://localhost:8081', tokenHandler)
     )
 
     static final CombateService combateService = new CombateService(

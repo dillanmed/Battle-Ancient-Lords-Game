@@ -3,9 +3,9 @@ spring:
     name: servico-personagem
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres.egnbgiknsyzojqfddxyt}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/db_personagem}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
 
   jpa:
     hibernate:

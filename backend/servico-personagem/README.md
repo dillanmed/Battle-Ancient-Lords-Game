@@ -12,7 +12,7 @@ Microsservico responsavel por criacao, consulta, habilidades e progressao de per
 
 Este servico nao implementa combate, autenticacao/JWT, inimigos, historico ou mensageria.
 
-## Como rodar
+## Como rodar localmente
 
 Na pasta `backend/servico-personagem`:
 
@@ -26,17 +26,20 @@ Por padrao, a aplicacao sobe em:
 http://localhost:8081
 ```
 
-## Variaveis de ambiente
+Sem profile ativo, o servico usa a configuracao default com PostgreSQL local em `localhost:5432/db_personagem`.
 
-O banco PostgreSQL fica no Supabase. A senha real nao deve ser commitada.
+## Rodar com Supabase
+
+O banco PostgreSQL do Supabase deve ser usado com o profile `supabase`. A senha real nao deve ser commitada.
 
 ```powershell
-$env:SPRING_DATASOURCE_URL="jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require"
-$env:SPRING_DATASOURCE_USERNAME="postgres.egnbgiknsyzojqfddxyt"
-$env:SPRING_DATASOURCE_PASSWORD="SUA_SENHA_AQUI"
+$env:SPRING_PROFILES_ACTIVE="supabase"
+$env:SUPABASE_DB_PASSWORD="SENHA_REAL_DO_BANCO"
+
+.\mvnw.cmd spring-boot:run
 ```
 
-O `application.yaml` tambem aceita rodar sem senha configurada, mas a conexao real com Supabase so funciona quando `SPRING_DATASOURCE_PASSWORD` esta correta no terminal.
+O log deve indicar que o profile `supabase` esta ativo. Mais detalhes estao em `README-SUPABASE.md`.
 
 ## Testes
 

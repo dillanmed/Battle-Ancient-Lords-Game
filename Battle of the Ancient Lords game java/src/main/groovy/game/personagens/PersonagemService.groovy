@@ -4,111 +4,87 @@ import game.services.ApiClient
 import game.types.Personagem
 
 /**
- * Serviço responsável pela gestão de personagens
- * Integra com API de character-service e fornece cache local
+ * Servico responsavel pela gestao de personagens.
+ * Integra com o servico-personagem e mantem fallback local para o jogo continuar offline.
  */
 class PersonagemService {
     private final ApiClient apiClient
     private final List<Personagem> personagensCache = []
-    private static final String PERSONAGENS_API_PATH = "/api/personagens"
+    private static final String PERSONAGENS_API_PATH = "/personagens"
 
     PersonagemService(ApiClient apiClient) {
         this.apiClient = apiClient
     }
 
-    /**
-     * Lista todos os personagens do usuário
-     * @return Lista de personagens (do cache ou API)
-     */
     List<Personagem> listarPersonagens() {
+        listarPersonagensPorUsuario(1L)
+    }
+
+    List<Personagem> listarPersonagensPorUsuario(Long usuarioId) {
         try {
             if (personagensCache.isEmpty()) {
-                // Tenta buscar da API
-                Map resposta = apiClient.get(PERSONAGENS_API_PATH)
-                if (resposta && resposta.personagens) {
-                    personagensCache.addAll(resposta.personagens)
+                Map resposta = apiClient.get("/usuarios/${usuarioId}/personagens")
+                List dados = resposta?.data instanceof List ? resposta.data : resposta?.personagens
+                if (dados) {
+                    personagensCache.addAll(dados.collect { fromBackend(it as Map) })
                 }
             }
             return personagensCache
         } catch (Exception e) {
             println("Erro ao listar personagens: ${e.message}")
-            // Retorna cache mesmo se API falhar
             return personagensCache
         }
     }
 
-    /**
-     * Cria um novo personagem
-     * @param nome Nome do personagem
-     * @param classe Classe do personagem
-     * @return Personagem criado
-     */
     Personagem criarPersonagem(String nome, String classe) {
+        criarPersonagem(1L, nome, classe)
+    }
+
+    Personagem criarPersonagem(Long usuarioId, String nome, String classe) {
         try {
-            // Validações
-            if (!nome?.trim()) throw new IllegalArgumentException("Nome é obrigatório")
-            if (!classe?.trim()) throw new IllegalArgumentException("Classe é obrigatória")
-            if (!validarClasse(classe)) throw new IllegalArgumentException("Classe inválida: $classe")
+            if (!nome?.trim()) throw new IllegalArgumentException("Nome e obrigatorio")
+            if (!classe?.trim()) throw new IllegalArgumentException("Classe e obrigatoria")
+            if (!validarClasse(classe)) throw new IllegalArgumentException("Classe invalida: $classe")
 
-            // Define estatísticas base por classe
-            Map statsBase = obterStatsBase(classe)
-
-            // Cria o personagem
-            Personagem personagem = new Personagem(
-                id: UUID.randomUUID().toString(),
-                nome: nome,
-                classe: classe,
-                hp: statsBase.hp,
-                maxHp: statsBase.hp,
-                mana: statsBase.mana,
-                maxMana: statsBase.mana,
-                bonusDano: statsBase.bonusDano,
-                nivel: 1,
-                xp: 0
-            )
-
-            // Tenta salvar na API
             try {
-                Map params = [
-                    nome: personagem.nome,
-                    classe: personagem.classe,
-                    hp: personagem.hp,
-                    maxHp: personagem.maxHp,
-                    mana: personagem.mana,
-                    maxMana: personagem.maxMana
-                ]
-                Map resposta = apiClient.post(PERSONAGENS_API_PATH, params)
+                println("Tentando criar personagem no backend...")
+                Map resposta = apiClient.post(PERSONAGENS_API_PATH, [
+                        usuarioId: usuarioId,
+                        nome: nome,
+                        classe: classe
+                ])
+
                 if (resposta && resposta.id) {
-                    personagem.id = resposta.id
+                    Personagem personagemBackend = fromBackend(resposta)
+                    personagensCache.add(personagemBackend)
+                    println("Personagem criado no backend com sucesso")
+                    return personagemBackend
                 }
             } catch (Exception e) {
-                println("Aviso: Não foi possível sincronizar com API: ${e.message}")
+                println("Falha ao criar personagem no backend. Usando fallback local. Motivo: ${e.message}")
             }
 
-            // Adiciona ao cache
-            personagensCache.add(personagem)
-            return personagem
+            Personagem personagemLocal = criarPersonagemLocal(nome, classe)
+            personagensCache.add(personagemLocal)
+            return personagemLocal
         } catch (Exception e) {
             println("Erro ao criar personagem: ${e.message}")
             return null
         }
     }
 
-    /**
-     * Obtém um personagem pelo ID
-     * @param id ID do personagem
-     * @return Personagem encontrado ou null
-     */
     Personagem obterPersonagem(String id) {
+        buscarPersonagem(id)
+    }
+
+    Personagem buscarPersonagem(String id) {
         try {
-            // Procura no cache primeiro
             Personagem encontrado = personagensCache.find { it.id == id }
             if (encontrado) return encontrado
 
-            // Tenta buscar da API
             Map resposta = apiClient.get("$PERSONAGENS_API_PATH/$id")
             if (resposta && resposta.id) {
-                Personagem personagem = new Personagem(resposta)
+                Personagem personagem = fromBackend(resposta)
                 personagensCache.add(personagem)
                 return personagem
             }
@@ -119,36 +95,31 @@ class PersonagemService {
         }
     }
 
-    /**
-     * Atualiza um personagem
-     * @param personagem Personagem a ser atualizado
-     * @return true se atualizado com sucesso
-     */
+    Map buscarDadosCombate(String id) {
+        try {
+            apiClient.get("$PERSONAGENS_API_PATH/$id/dados-combate")
+        } catch (Exception e) {
+            println("Erro ao buscar dados de combate: ${e.message}")
+            [:]
+        }
+    }
+
+    List buscarHabilidadesDoPersonagem(String id) {
+        try {
+            Map resposta = apiClient.get("$PERSONAGENS_API_PATH/$id/habilidades")
+            resposta?.data instanceof List ? resposta.data : []
+        } catch (Exception e) {
+            println("Erro ao buscar habilidades do personagem: ${e.message}")
+            []
+        }
+    }
+
     boolean atualizarPersonagem(Personagem personagem) {
         try {
             if (!personagem?.id) {
-                throw new IllegalArgumentException("ID do personagem é obrigatório")
+                throw new IllegalArgumentException("ID do personagem e obrigatorio")
             }
 
-            // Tenta atualizar na API
-            try {
-                Map params = [
-                    nome: personagem.nome,
-                    classe: personagem.classe,
-                    hp: personagem.hp,
-                    maxHp: personagem.maxHp,
-                    mana: personagem.mana,
-                    maxMana: personagem.maxMana,
-                    nivel: personagem.nivel,
-                    xp: personagem.xp,
-                    bonusDano: personagem.bonusDano
-                ]
-                apiClient.put("$PERSONAGENS_API_PATH/${personagem.id}", params)
-            } catch (Exception e) {
-                println("Aviso: Não foi possível sincronizar com API: ${e.message}")
-            }
-
-            // Atualiza no cache
             int indice = personagensCache.findIndexOf { it.id == personagem.id }
             if (indice >= 0) {
                 personagensCache[indice] = personagem
@@ -160,21 +131,14 @@ class PersonagemService {
         }
     }
 
-    /**
-     * Deleta um personagem
-     * @param id ID do personagem
-     * @return true se deletado com sucesso
-     */
     boolean deletarPersonagem(String id) {
         try {
-            // Tenta deletar na API
             try {
                 apiClient.delete("$PERSONAGENS_API_PATH/$id")
             } catch (Exception e) {
-                println("Aviso: Não foi possível sincronizar com API: ${e.message}")
+                println("Aviso: Nao foi possivel sincronizar com API: ${e.message}")
             }
 
-            // Remove do cache
             personagensCache.removeIf { it.id == id }
             return true
         } catch (Exception e) {
@@ -183,11 +147,62 @@ class PersonagemService {
         }
     }
 
-    /**
-     * Obtém as estatísticas base de uma classe
-     * @param classe Classe do personagem
-     * @return Map com hp, mana e bonusDano base
-     */
+    void limparCache() {
+        personagensCache.clear()
+    }
+
+    private Personagem criarPersonagemLocal(String nome, String classe) {
+        Map statsBase = obterStatsBase(classe)
+
+        new Personagem(
+                id: UUID.randomUUID().toString(),
+                nome: nome,
+                classe: classe,
+                hp: statsBase.hp,
+                maxHp: statsBase.hp,
+                mana: statsBase.mana,
+                maxMana: statsBase.mana,
+                bonusDano: statsBase.bonusDano,
+                nivel: 1,
+                xp: 0
+        )
+    }
+
+    private Personagem fromBackend(Map data) {
+        int maxHp = valorInteiro(data.vidaMaxima, 100)
+        int maxMana = valorInteiro(data.manaMaxima, 50)
+
+        new Personagem(
+                id: data.id?.toString(),
+                nome: data.nome?.toString(),
+                classe: classeParaFrontend(data.classe?.toString()),
+                hp: maxHp,
+                maxHp: maxHp,
+                mana: maxMana,
+                maxMana: maxMana,
+                nivel: valorInteiro(data.nivel, 1),
+                xp: valorInteiro(data.experiencia, 0),
+                bonusDano: valorInteiro(data.ataque, 0)
+        )
+    }
+
+    private String classeParaFrontend(String classe) {
+        switch (classe?.toUpperCase()) {
+            case 'GUERREIRO':
+                return 'WARRIOR'
+            case 'ARQUEIRO':
+                return 'ARCHER'
+            case 'MAGO':
+                return 'MAGE'
+            default:
+                return classe
+        }
+    }
+
+    private int valorInteiro(Object valor, int padrao) {
+        valor == null ? padrao : valor as int
+    }
+
     private Map obterStatsBase(String classe) {
         switch (classe.toUpperCase()) {
             case 'WARRIOR':
@@ -203,19 +218,7 @@ class PersonagemService {
         }
     }
 
-    /**
-     * Valida se uma classe é válida
-     * @param classe Classe a validar
-     * @return true se válida
-     */
     private boolean validarClasse(String classe) {
         ['WARRIOR', 'ARCHER', 'MAGE', 'PALADIN'].contains(classe.toUpperCase())
-    }
-
-    /**
-     * Limpa o cache de personagens
-     */
-    void limparCache() {
-        personagensCache.clear()
     }
 }
