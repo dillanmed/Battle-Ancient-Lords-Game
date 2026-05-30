@@ -1,6 +1,7 @@
 package game.ui
 
 import game.Main
+import game.services.ApiException
 import game.services.ServiceRegistry
 import de.gurkenlabs.litiengine.Game
 import de.gurkenlabs.litiengine.gui.screens.Screen
@@ -225,10 +226,22 @@ class LoginScreen extends Screen {
     }
 
     private void validarLogin() {
-        if (ServiceRegistry.authService.login(username, password) != null) {
+        if (username.trim().empty || password.trim().empty) {
+            mostrarPopup('Preencha usuario/e-mail e senha', false)
+            return
+        }
+
+        try {
+            ServiceRegistry.authService.login(username, password)
             Main.gameState = Main.MENU
             Game.screens().display('inicio')
-        } else {
+        } catch (ApiException exception) {
+            if (exception.statusCode == 401) {
+                mostrarPopup('Usuario/e-mail ou senha invalidos', false)
+            } else {
+                mostrarPopup(exception.message ?: 'Nao foi possivel entrar', false)
+            }
+        } catch (Exception exception) {
             mostrarPopup('Usuario ou senha invalidos', false)
         }
     }
