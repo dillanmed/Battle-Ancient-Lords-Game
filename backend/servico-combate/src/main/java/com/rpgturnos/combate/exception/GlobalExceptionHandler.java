@@ -17,7 +17,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
-    @ExceptionHandler({BatalhaFinalizadaException.class, TurnoInvalidoException.class, IllegalStateException.class})
+    @ExceptionHandler({
+            BatalhaFinalizadaException.class,
+            TurnoInvalidoException.class,
+            HabilidadeInvalidaException.class,
+            IllegalStateException.class
+    })
     public ResponseEntity<Map<String, Object>> handleRegraDeNegocio(RuntimeException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
     }

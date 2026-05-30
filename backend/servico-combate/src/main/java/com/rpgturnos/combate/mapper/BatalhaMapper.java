@@ -13,23 +13,9 @@ public final class BatalhaMapper {
     }
 
     public static Batalha toEntity(CriarBatalhaRequest request) {
-        CombatenteSnapshot jogador = CombatenteSnapshot.builder()
-                .referenciaOriginalId(request.getPersonagemId())
-                .nome(valorOuPadrao(request.getNomeJogador(), "Jogador"))
-                .tipo("JOGADOR")
-                .vidaMaxima(valorOuPadrao(request.getVidaJogador(), 100))
-                .vidaAtual(valorOuPadrao(request.getVidaJogador(), 100))
-                .manaMaxima(valorOuPadrao(request.getManaJogador(), 50))
-                .manaAtual(valorOuPadrao(request.getManaJogador(), 50))
-                .ataque(valorOuPadrao(request.getAtaqueJogador(), 20))
-                .defesa(valorOuPadrao(request.getDefesaJogador(), 10))
-                .nivel(valorOuPadrao(request.getNivelJogador(), 1))
-                .build();
-
         return Batalha.builder()
                 .usuarioId(request.getUsuarioId())
                 .personagemId(request.getPersonagemId())
-                .jogador(jogador)
                 .build();
     }
 
@@ -57,14 +43,6 @@ public final class BatalhaMapper {
                 .round(evento.getRound())
                 .criadoEm(evento.getCriadoEm())
                 .build();
-    }
-
-    private static String valorOuPadrao(String valor, String padrao) {
-        return valor == null || valor.isBlank() ? padrao : valor;
-    }
-
-    private static Integer valorOuPadrao(Integer valor, Integer padrao) {
-        return valor == null ? padrao : valor;
     }
 
     private static String nome(CombatenteSnapshot combatente) {

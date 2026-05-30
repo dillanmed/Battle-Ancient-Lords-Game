@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
+import com.rpgturnos.combate.dto.HabilidadeRequest;
 import com.rpgturnos.combate.model.Batalha;
 import com.rpgturnos.combate.model.EventoBatalha;
 import com.rpgturnos.combate.service.BatalhaService;
@@ -43,6 +44,10 @@ public class CombateFacade {
 
     public Batalha defender(Long id) {
         return batalhaService.defender(id);
+    }
+
+    public Batalha usarHabilidade(Long id, HabilidadeRequest request) {
+        return batalhaService.usarHabilidade(id, request);
     }
 
     public Batalha finalizarBatalha(Long id) {

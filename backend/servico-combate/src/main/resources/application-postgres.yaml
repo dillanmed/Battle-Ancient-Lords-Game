@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.egnbgiknsyzojqfddxyt}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: ${SERVER_PORT:8084}
