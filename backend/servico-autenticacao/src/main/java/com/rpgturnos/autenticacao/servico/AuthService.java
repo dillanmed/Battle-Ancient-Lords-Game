@@ -3,12 +3,15 @@ package com.rpgturnos.autenticacao.servico;
 import com.rpgturnos.autenticacao.dto.AuthResponse;
 import com.rpgturnos.autenticacao.dto.CadastroRequest;
 import com.rpgturnos.autenticacao.dto.LoginRequest;
+import com.rpgturnos.autenticacao.dto.RecuperacaoSenhaResponse;
 import com.rpgturnos.autenticacao.excecao.EmailJaCadastradoException;
 import com.rpgturnos.autenticacao.modelo.Usuario;
 import com.rpgturnos.autenticacao.repositorio.UsuarioRepository;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,7 +44,7 @@ public class AuthService {
         }
 
         Usuario usuario = new Usuario(
-                request.nome().trim(),
+                request.login().trim(),
                 email,
                 passwordEncoder.encode(request.senha())
         );
@@ -51,12 +54,30 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        String email = normalizarEmail(request.email());
+        String email = resolverEmailLogin(request.email());
 
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.senha()));
         Usuario usuario = usuarioRepository.findByEmail(email).orElseThrow();
 
         return toResponse(usuario);
+    }
+
+    public RecuperacaoSenhaResponse solicitarRecuperacaoSenha(String emailInformado) {
+        String email = normalizarEmail(emailInformado);
+
+        usuarioRepository.findByEmail(email).ifPresent(usuario -> {
+            // Ponto de integracao com envio de email ou Supabase Edge Function.
+        });
+
+        return new RecuperacaoSenhaResponse("Se o email existir, enviaremos as instrucoes de recuperacao.");
+    }
+
+    public String extrairEmailDoToken(String token) {
+        return jwtService.extrairEmail(token);
+    }
+
+    public boolean tokenValido(String token, UserDetails userDetails) {
+        return jwtService.tokenValido(token, userDetails);
     }
 
     private AuthResponse toResponse(Usuario usuario) {
@@ -71,5 +92,16 @@ public class AuthService {
 
     private String normalizarEmail(String email) {
         return email.trim().toLowerCase();
+    }
+
+    private String resolverEmailLogin(String loginOuEmail) {
+        String valor = loginOuEmail.trim();
+        if (valor.contains("@")) {
+            return normalizarEmail(valor);
+        }
+
+        return usuarioRepository.findByNome(valor)
+                .map(Usuario::getEmail)
+                .orElseThrow(() -> new BadCredentialsException("Login inexistente"));
     }
 }

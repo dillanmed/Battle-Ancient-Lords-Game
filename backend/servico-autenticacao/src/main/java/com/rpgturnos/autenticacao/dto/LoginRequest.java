@@ -1,11 +1,9 @@
 package com.rpgturnos.autenticacao.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record LoginRequest(
-        @NotBlank(message = "Email e obrigatorio")
-        @Email(message = "Email invalido")
+        @NotBlank(message = "Login ou email e obrigatorio")
         String email,
 
         @NotBlank(message = "Senha e obrigatoria")

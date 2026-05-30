@@ -5,6 +5,8 @@ import com.rpgturnos.autenticacao.dto.CadastroRequest;
 import com.rpgturnos.autenticacao.dto.LoginRequest;
 import com.rpgturnos.autenticacao.dto.PartidaHistoricoResponse;
 import com.rpgturnos.autenticacao.dto.PerfilResponse;
+import com.rpgturnos.autenticacao.dto.RecuperacaoSenhaRequest;
+import com.rpgturnos.autenticacao.dto.RecuperacaoSenhaResponse;
 import com.rpgturnos.autenticacao.modelo.Usuario;
 import com.rpgturnos.autenticacao.servico.AuthService;
 import com.rpgturnos.autenticacao.servico.HistoricoUsuarioService;
@@ -39,6 +41,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/esqueci-senha")
+    public ResponseEntity<RecuperacaoSenhaResponse> esqueciSenha(
+            @Valid @RequestBody RecuperacaoSenhaRequest request
+    ) {
+        return ResponseEntity.ok(authService.solicitarRecuperacaoSenha(request.email()));
     }
 
     @GetMapping("/me")

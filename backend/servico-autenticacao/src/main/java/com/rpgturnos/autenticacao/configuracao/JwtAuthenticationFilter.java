@@ -1,6 +1,7 @@
 package com.rpgturnos.autenticacao.configuracao;
 
-import com.rpgturnos.autenticacao.servico.JwtService;
+import com.rpgturnos.autenticacao.servico.AuthService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,11 +20,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final AuthService authService;
     private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
-        this.jwtService = jwtService;
+    public JwtAuthenticationFilter(AuthService authService, UserDetailsService userDetailsService) {
+        this.authService = authService;
         this.userDetailsService = userDetailsService;
     }
 
@@ -41,12 +42,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authorizationHeader.substring(7);
-        String email = jwtService.extrairEmail(token);
+        String email;
+
+        try {
+            email = authService.extrairEmailDoToken(token);
+        } catch (JwtException | IllegalArgumentException exception) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT invalido ou expirado");
+            return;
+        }
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            if (jwtService.tokenValido(token, userDetails)) {
+            if (authService.tokenValido(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,

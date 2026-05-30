@@ -5,9 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record CadastroRequest(
-        @NotBlank(message = "Nome e obrigatorio")
-        @Size(min = 2, max = 80, message = "Nome deve ter entre 2 e 80 caracteres")
-        String nome,
+        @NotBlank(message = "Login e obrigatorio")
+        @Size(min = 2, max = 80, message = "Login deve ter entre 2 e 80 caracteres")
+        String login,
 
         @NotBlank(message = "Email e obrigatorio")
         @Email(message = "Email invalido")

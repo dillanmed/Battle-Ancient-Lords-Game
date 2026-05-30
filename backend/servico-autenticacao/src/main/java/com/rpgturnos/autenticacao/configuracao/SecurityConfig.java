@@ -32,7 +32,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/cadastro", "/api/auth/login", "/h2-console/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/cadastro",
+                                "/api/auth/login",
+                                "/api/auth/esqueci-senha",
+                                "/h2-console/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
