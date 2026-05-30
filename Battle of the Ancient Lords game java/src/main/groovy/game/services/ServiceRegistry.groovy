@@ -11,7 +11,7 @@ class ServiceRegistry {
     static final AuthContext authContext = new AuthContext()
 
     static final AuthService authService = new AuthService(
-            new ApiClient('http://localhost:8081', tokenHandler),
+            new ApiClient('http://localhost:8080', tokenHandler),
             tokenHandler,
             authContext
     )

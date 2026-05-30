@@ -8,6 +8,8 @@ import game.components.MainGameScreen
 import game.effects.FloatingText
 import game.services.AudioService
 import game.services.FontService
+import game.services.ServiceRegistry
+import game.types.Personagem
 import game.ui.LoginScreen
 import game.ui.CadastroScreen
 
@@ -348,7 +350,9 @@ class Main {
                         case KeyEvent.VK_ENTER:
                             currentClass = characters[selectedCharacter]
                             println "[DIAGNOSTICO CLASSE] Selecionou a classe: " + currentClass
-                            resetPlayerStatsCompletely()
+                            if (!tryLoadBackendCharacter(currentClass)) {
+                                resetPlayerStatsCompletely()
+                            }
                             loadActivePlayerSprites()
 
                             stopAllMusic()
@@ -461,6 +465,38 @@ class Main {
             maxHP = 70; playerHP = 70
             maxMana = 120; playerMana = 120
         }
+    }
+
+    static boolean tryLoadBackendCharacter(String selectedClass) {
+        try {
+            println "Tentando criar personagem no backend..."
+            Personagem personagem = ServiceRegistry.personagemService.criarPersonagem(1L, "Heroi ${selectedClass}", selectedClass)
+            if (personagem == null) {
+                println "Falha ao criar personagem no backend. Usando fallback local."
+                return false
+            }
+
+            applyFrontendCharacter(personagem)
+            println "Personagem criado no backend com sucesso"
+            return true
+        } catch (Exception e) {
+            println "Falha ao criar personagem no backend. Usando fallback local. Motivo: ${e.message}"
+            return false
+        }
+    }
+
+    static void applyFrontendCharacter(Personagem personagem) {
+        currentClass = personagem.classe ?: currentClass
+        playerLives = 5
+        isRespawning = false
+        playerLevel = personagem.nivel
+        playerXP = personagem.xp
+        maxXP = 100 * Math.max(playerLevel, 1)
+        damageBonus = personagem.bonusDano
+        maxHP = personagem.maxHp
+        playerHP = personagem.hp
+        maxMana = personagem.maxMana
+        playerMana = personagem.mana
     }
 
     static void loadActivePlayerSprites() {

@@ -52,7 +52,7 @@ class ApiClient {
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString())
 
         if (response.statusCode() >= 400) {
-            throw new IOException("HTTP ${response.statusCode()}: ${response.body()}")
+            throw new ApiException(response.statusCode(), extrairMensagemErro(response.body()), response.body())
         }
 
         if (!response.body()) {
@@ -61,5 +61,32 @@ class ApiClient {
 
         def parsed = jsonSlurper.parseText(response.body())
         parsed instanceof Map ? parsed as Map : [data: parsed]
+    }
+
+    private String extrairMensagemErro(String body) {
+        if (!body) {
+            return 'Nao foi possivel concluir a requisicao.'
+        }
+
+        try {
+            def parsed = jsonSlurper.parseText(body)
+            if (parsed instanceof Map) {
+                return parsed.mensagem ?: parsed.message ?: parsed.erro ?: body
+            }
+        } catch (Exception ignored) {
+        }
+
+        body
+    }
+}
+
+class ApiException extends IOException {
+    final int statusCode
+    final String responseBody
+
+    ApiException(int statusCode, String message, String responseBody) {
+        super(message)
+        this.statusCode = statusCode
+        this.responseBody = responseBody
     }
 }

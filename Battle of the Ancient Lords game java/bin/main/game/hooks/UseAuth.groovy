@@ -75,7 +75,7 @@ class UseAuth {
      * @return Usuario autenticado ou null
      */
     Usuario getUsuarioAtual() {
-        authContext.usuarioAutenticado
+        authContext.usuarioAtual
     }
 
     /**
@@ -83,7 +83,7 @@ class UseAuth {
      * @return true se autenticado, false caso contrário
      */
     boolean isAutenticado() {
-        authContext.isAutenticado()
+        authContext.isLoggedIn()
     }
 
     /**
@@ -91,6 +91,6 @@ class UseAuth {
      * @return Token ou null
      */
     String getToken() {
-        authContext.token
+        ServiceRegistry.tokenHandler.token
     }
 }

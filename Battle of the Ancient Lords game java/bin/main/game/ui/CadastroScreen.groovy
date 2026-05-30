@@ -1,6 +1,7 @@
 package game.ui
 
 import game.Main
+import game.services.ApiException
 import game.services.ServiceRegistry
 import de.gurkenlabs.litiengine.Game
 import de.gurkenlabs.litiengine.gui.screens.Screen
@@ -243,9 +244,19 @@ class CadastroScreen extends Screen {
             return
         }
 
-        ServiceRegistry.authService.cadastrar(username, email, password)
-        Main.gameState = Main.MENU
-        Game.screens().display('inicio')
+        try {
+            ServiceRegistry.authService.cadastrar(username, email, password)
+            Main.gameState = Main.MENU
+            Game.screens().display('inicio')
+        } catch (ApiException exception) {
+            if (exception.statusCode == 409) {
+                mostrarPopup('Este e-mail ja esta cadastrado', false)
+            } else {
+                mostrarPopup(exception.message ?: 'Nao foi possivel cadastrar', false)
+            }
+        } catch (Exception exception) {
+            mostrarPopup('Nao foi possivel cadastrar', false)
+        }
     }
 
     private boolean emailValido(String email) {
