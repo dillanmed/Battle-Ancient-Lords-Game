@@ -11,6 +11,7 @@ class PersonagemService {
     private final ApiClient apiClient
     private final List<Personagem> personagensCache = []
     private static final String PERSONAGENS_API_PATH = "/personagens"
+    private boolean ultimaFalhaIntegracao = false
 
     PersonagemService(ApiClient apiClient) {
         this.apiClient = apiClient
@@ -22,18 +23,45 @@ class PersonagemService {
 
     List<Personagem> listarPersonagensPorUsuario(Long usuarioId) {
         try {
-            if (personagensCache.isEmpty()) {
-                Map resposta = apiClient.get("/usuarios/${usuarioId}/personagens")
-                List dados = resposta?.data instanceof List ? resposta.data : resposta?.personagens
-                if (dados) {
-                    personagensCache.addAll(dados.collect { fromBackend(it as Map) })
+            ultimaFalhaIntegracao = false
+            Map resposta = apiClient.get("/usuarios/${usuarioId}/personagens")
+            List dados = extrairListaPersonagens(resposta)
+            List<Personagem> personagens = dados.collect { fromBackend(it as Map) }
+
+            personagens.each { personagem ->
+                int indice = personagensCache.findIndexOf { it.id == personagem.id }
+                if (indice >= 0) {
+                    personagensCache[indice] = personagem
+                } else {
+                    personagensCache.add(personagem)
                 }
             }
-            return personagensCache
+            return personagens
         } catch (Exception e) {
+            ultimaFalhaIntegracao = true
             println("Erro ao listar personagens: ${e.message}")
-            return personagensCache
+            return []
         }
+    }
+
+    Personagem buscarPersonagemPorClasse(Long usuarioId, String classe) {
+        try {
+            String classeNormalizada = normalizarClasse(classe)
+            if (!classeNormalizada) {
+                return null
+            }
+
+            listarPersonagensPorUsuario(usuarioId).find {
+                normalizarClasse(it.classe) == classeNormalizada
+            }
+        } catch (Exception e) {
+            println("Erro ao buscar personagem por classe: ${e.message}")
+            return null
+        }
+    }
+
+    boolean houveFalhaIntegracao() {
+        ultimaFalhaIntegracao
     }
 
     Personagem criarPersonagem(String nome, String classe) {
@@ -47,17 +75,8 @@ class PersonagemService {
             if (!validarClasse(classe)) throw new IllegalArgumentException("Classe invalida: $classe")
 
             try {
-                println("Tentando criar personagem no backend...")
-                Map resposta = apiClient.post(PERSONAGENS_API_PATH, [
-                        usuarioId: usuarioId,
-                        nome: nome,
-                        classe: classe
-                ])
-
-                if (resposta && resposta.id) {
-                    Personagem personagemBackend = fromBackend(resposta)
-                    personagensCache.add(personagemBackend)
-                    println("Personagem criado no backend com sucesso")
+                Personagem personagemBackend = criarPersonagemNoBackend(usuarioId, nome, classe)
+                if (personagemBackend) {
                     return personagemBackend
                 }
             } catch (Exception e) {
@@ -71,6 +90,30 @@ class PersonagemService {
             println("Erro ao criar personagem: ${e.message}")
             return null
         }
+    }
+
+    Personagem criarPersonagemNoBackend(Long usuarioId, String nome, String classe) {
+        if (!nome?.trim()) throw new IllegalArgumentException("Nome e obrigatorio")
+        if (!classe?.trim()) throw new IllegalArgumentException("Classe e obrigatoria")
+        if (!validarClasse(classe)) throw new IllegalArgumentException("Classe invalida: $classe")
+
+        println("Tentando criar personagem no backend...")
+        Map resposta = apiClient.post(PERSONAGENS_API_PATH, [
+                usuarioId: usuarioId,
+                nome: nome,
+                classe: classeParaBackend(classe)
+        ])
+
+        Map dados = extrairPersonagem(resposta)
+        if (!dados?.id) {
+            return null
+        }
+
+        Personagem personagemBackend = fromBackend(dados)
+        personagensCache.removeIf { it.id == personagemBackend.id }
+        personagensCache.add(personagemBackend)
+        println("Personagem criado no backend com sucesso")
+        return personagemBackend
     }
 
     Personagem obterPersonagem(String id) {
@@ -95,12 +138,14 @@ class PersonagemService {
         }
     }
 
-    Map buscarDadosCombate(String id) {
+    Personagem buscarDadosCombate(String id) {
         try {
-            apiClient.get("$PERSONAGENS_API_PATH/$id/dados-combate")
+            Map resposta = apiClient.get("$PERSONAGENS_API_PATH/$id/dados-combate")
+            Map dados = extrairPersonagem(resposta)
+            dados ? fromBackend(dados) : null
         } catch (Exception e) {
             println("Erro ao buscar dados de combate: ${e.message}")
-            [:]
+            null
         }
     }
 
@@ -186,8 +231,28 @@ class PersonagemService {
         )
     }
 
+    private List extrairListaPersonagens(Map resposta) {
+        if (resposta?.data instanceof List) {
+            return resposta.data
+        }
+        if (resposta?.personagens instanceof List) {
+            return resposta.personagens
+        }
+        if (resposta?.content instanceof List) {
+            return resposta.content
+        }
+        []
+    }
+
+    private Map extrairPersonagem(Map resposta) {
+        if (resposta?.data instanceof Map) {
+            return resposta.data as Map
+        }
+        resposta
+    }
+
     private String classeParaFrontend(String classe) {
-        switch (classe?.toUpperCase()) {
+        switch (normalizarClasse(classe)) {
             case 'GUERREIRO':
                 return 'WARRIOR'
             case 'ARQUEIRO':
@@ -196,6 +261,26 @@ class PersonagemService {
                 return 'MAGE'
             default:
                 return classe
+        }
+    }
+
+    private String classeParaBackend(String classe) {
+        normalizarClasse(classe) ?: classe
+    }
+
+    private String normalizarClasse(String classe) {
+        switch (classe?.trim()?.toUpperCase()) {
+            case 'WARRIOR':
+            case 'GUERREIRO':
+                return 'GUERREIRO'
+            case 'ARCHER':
+            case 'ARQUEIRO':
+                return 'ARQUEIRO'
+            case 'MAGE':
+            case 'MAGO':
+                return 'MAGO'
+            default:
+                return classe?.trim()?.toUpperCase()
         }
     }
 
@@ -219,6 +304,6 @@ class PersonagemService {
     }
 
     private boolean validarClasse(String classe) {
-        ['WARRIOR', 'ARCHER', 'MAGE', 'PALADIN'].contains(classe.toUpperCase())
+        ['WARRIOR', 'ARCHER', 'MAGE', 'GUERREIRO', 'ARQUEIRO', 'MAGO', 'PALADIN'].contains(classe.toUpperCase())
     }
 }
