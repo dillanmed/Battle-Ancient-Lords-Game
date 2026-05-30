@@ -2,3 +2,8 @@ build/
 *.jar
 *.zip
 *.tar
+
+# Local database files
+backend/servico-combate/data/
+*.mv.db
+*.trace.db
