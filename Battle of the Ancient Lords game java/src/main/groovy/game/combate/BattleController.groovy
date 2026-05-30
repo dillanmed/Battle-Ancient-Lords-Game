@@ -33,7 +33,7 @@ class BattleController extends Main {
             playerVisualState = STATE_ATTACK
             playerStateTime = System.currentTimeMillis()
 
-            playSFX("src/main/resources/sons/Dano no inimigo.mp3")
+            playSFX("src/main/resources/sons/chuva de flechas.mp3")
             battleMessage = "Arqueiro conjurou [CHUVA DE FLECHAS]! Dano aplicado em TODOS os alvos!"
 
             for (int i = 0; i < 3; i++) {
@@ -67,7 +67,7 @@ class BattleController extends Main {
 
             int massiveDamage = (10 + damageBonus + random.nextInt(15)) * 2
             enemyHP[selectedEnemy] -= massiveDamage
-            playSFX("src/main/resources/sons/Dano no inimigo.mp3")
+            playSFX("src/main/resources/sons/Explosao.mp3")
 
             battleMessage = "Mago invocou [METEORO ARCANO] causando devastadores ${massiveDamage} no alvo!"
 

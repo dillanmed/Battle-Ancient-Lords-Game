@@ -3,6 +3,8 @@
 // =========================================
 package game
 
+import game.inventory.Item
+import game.inventory.inventario
 import game.auth.EsqueceuSenha
 import game.components.MainGameScreen
 import game.effects.FloatingText
@@ -260,6 +262,7 @@ class Main {
 
         loadGameFont()
         loadSprites()
+        inventario.loadStarterItems()
 
         playMenuMusic("src/main/resources/sons/musica da tela inicial.wav")
 
@@ -727,7 +730,10 @@ class Main {
         game.render.GameRenderer.renderWin(g)
     }
     static void renderInventory(Graphics2D g) {
-        game.render.GameRenderer.renderInventory(g)
+        game.render.GameRenderer.renderInventario(g)
+    }
+    static void renderitem(Graphics2D g) {
+        game.render.GameRenderer.renderitem(g)
     }
     static void renderBattle(Graphics2D g) {
         game.render.GameRenderer.renderBattle(g)
@@ -741,4 +747,8 @@ class Main {
     static void enemyTurn() {
         game.combate.BattleController.enemyTurn()
     }
+    static void renderEsqueceuSenha(Graphics2D g) {
+        game.render.GameRenderer.renderEsqueceuSenha(g)
+    }
+
 }
