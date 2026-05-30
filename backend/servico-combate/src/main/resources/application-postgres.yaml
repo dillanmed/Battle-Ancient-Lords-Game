@@ -3,7 +3,10 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require}
     driver-class-name: org.postgresql.Driver
     username: ${SPRING_DATASOURCE_USERNAME:postgres.egnbgiknsyzojqfddxyt}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    password: ${SPRING_DATASOURCE_PASSWORD:${SUPABASE_DB_PASSWORD}}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:4}
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
 
   jpa:
     hibernate:
@@ -11,4 +14,4 @@ spring:
     show-sql: true
 
 server:
-  port: ${SERVER_PORT:8084}
+  port: ${SERVER_PORT:8083}

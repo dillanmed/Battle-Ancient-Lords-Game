@@ -1,10 +1,12 @@
 package com.rpgturnos.combate.rabbitmq;
 
 import org.springframework.amqp.core.Queue;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(name = "app.rabbitmq.enabled", havingValue = "true")
 public class RabbitMQConfig {
 
     public static final String FILA_BATALHA_FINALIZADA = "batalha.finalizada";

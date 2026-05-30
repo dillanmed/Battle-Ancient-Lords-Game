@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,14 +14,22 @@ public class BatalhaProducer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BatalhaProducer.class);
 
-    private final RabbitTemplate rabbitTemplate;
+    private final ObjectProvider<RabbitTemplate> rabbitTemplateProvider;
+    private final boolean rabbitMqEnabled;
 
-    public BatalhaProducer(RabbitTemplate rabbitTemplate) {
-        this.rabbitTemplate = rabbitTemplate;
+    public BatalhaProducer(ObjectProvider<RabbitTemplate> rabbitTemplateProvider,
+                           @Value("${app.rabbitmq.enabled:false}") boolean rabbitMqEnabled) {
+        this.rabbitTemplateProvider = rabbitTemplateProvider;
+        this.rabbitMqEnabled = rabbitMqEnabled;
     }
 
     public void publicarBatalhaFinalizada(BatalhaFinalizadaEvent event) {
+        if (!rabbitMqEnabled) {
+            return;
+        }
+
         try {
+            RabbitTemplate rabbitTemplate = rabbitTemplateProvider.getObject();
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.FILA_BATALHA_FINALIZADA,
                     event

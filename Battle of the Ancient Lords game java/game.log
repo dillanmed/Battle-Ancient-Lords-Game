@@ -75,3 +75,33 @@ java.lang.NullPointerException: Cannot invoke "java.awt.image.VolatileImage.vali
 	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:93)
 	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
 
+Mae 30, 2026 12:13:46 G.M. de.gurkenlabs.litiengine.DefaultUncaughtExceptionHandler uncaughtException
+SEVERE: Game crashed! :(
+groovy.lang.MissingMethodException: No signature of method: java.lang.String.indexOf() is applicable for argument types: (Character) values: [@]
+Possible solutions: indexOf(int), indexOf(java.lang.String), indexOf(int, int), indexOf(java.lang.String, int), indexOf(int, int, int), indexOf(java.lang.String, int, int)
+	at org.codehaus.groovy.runtime.ScriptBytecodeAdapter.unwrap(ScriptBytecodeAdapter.java:70)
+	at org.codehaus.groovy.runtime.callsite.PojoMetaClassSite.call(PojoMetaClassSite.java:46)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(CallSiteArray.java:47)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:125)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:139)
+	at game.auth.EsqueceuSenha$_setupKeyboardInput_closure1.doCall(EsqueceuSenha.groovy:99)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:107)
+	at groovy.lang.MetaMethod.doMethodInvoke(MetaMethod.java:323)
+	at org.codehaus.groovy.runtime.metaclass.ClosureMetaClass.invokeMethod(ClosureMetaClass.java:274)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1030)
+	at groovy.lang.Closure.call(Closure.java:427)
+	at org.codehaus.groovy.runtime.ConvertedClosure.invokeCustom(ConvertedClosure.java:50)
+	at org.codehaus.groovy.runtime.ConversionHandler.invoke(ConversionHandler.java:112)
+	at jdk.proxy2/jdk.proxy2.$Proxy13.keyTyped(Unknown Source)
+	at de.gurkenlabs.litiengine.input.Keyboard.lambda$executeTypedKeys$12(Keyboard.java:279)
+	at java.base/java.util.concurrent.ConcurrentHashMap$KeySetView.forEach(ConcurrentHashMap.java:4709)
+	at de.gurkenlabs.litiengine.input.Keyboard.lambda$executeTypedKeys$14(Keyboard.java:279)
+	at java.base/java.util.concurrent.ConcurrentHashMap$KeySetView.forEach(ConcurrentHashMap.java:4709)
+	at de.gurkenlabs.litiengine.input.Keyboard.executeTypedKeys(Keyboard.java:273)
+	at de.gurkenlabs.litiengine.input.Keyboard.update(Keyboard.java:197)
+	at de.gurkenlabs.litiengine.GameLoop.updateInvariableEngineComponents(GameLoop.java:128)
+	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:84)
+	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
+
