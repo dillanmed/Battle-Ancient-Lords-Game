@@ -472,20 +472,67 @@ class Main {
 
     static boolean tryLoadBackendCharacter(String selectedClass) {
         try {
-            println "Tentando criar personagem no backend..."
-            Personagem personagem = ServiceRegistry.personagemService.criarPersonagem(1L, "Heroi ${selectedClass}", selectedClass)
-            if (personagem == null) {
-                println "Falha ao criar personagem no backend. Usando fallback local."
+            Long usuarioId = obterUsuarioIdAtual()
+            Personagem personagem = ServiceRegistry.personagemService.buscarPersonagemPorClasse(usuarioId, selectedClass)
+            if (ServiceRegistry.personagemService.houveFalhaIntegracao()) {
+                println "Falha ao integrar com servico-personagem. Usando fallback local."
                 return false
             }
 
+            if (personagem != null) {
+                println "Personagem salvo encontrado para classe ${selectedClass}."
+            } else {
+                println "Nenhum personagem salvo encontrado. Criando novo..."
+                personagem = ServiceRegistry.personagemService.criarPersonagemNoBackend(usuarioId, "Heroi ${selectedClass}", selectedClass)
+                if (personagem == null) {
+                    println "Falha ao integrar com servico-personagem. Usando fallback local."
+                    return false
+                }
+            }
+
+            Personagem dadosCombate = buscarDadosCombatePersonagem(personagem)
+            if (dadosCombate != null) {
+                personagem = dadosCombate
+            }
+
             applyFrontendCharacter(personagem)
-            println "Personagem criado no backend com sucesso"
             return true
         } catch (Exception e) {
-            println "Falha ao criar personagem no backend. Usando fallback local. Motivo: ${e.message}"
+            println "Falha ao integrar com servico-personagem. Usando fallback local. Motivo: ${e.message}"
             return false
         }
+    }
+
+    static Long obterUsuarioIdAtual() {
+        try {
+            String id = ServiceRegistry.authContext?.usuarioAtual?.id
+            if (id?.isLong()) {
+                Long usuarioId = id as Long
+                if (usuarioId > 0L) {
+                    return usuarioId
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        return 1L
+    }
+
+    static Personagem buscarDadosCombatePersonagem(Personagem personagem) {
+        if (!personagem?.id) {
+            println "Falha ao carregar dados de combate. Usando dados basicos do personagem."
+            return null
+        }
+
+        println "Buscando dados de combate do personagem..."
+        Personagem dadosCombate = ServiceRegistry.personagemService.buscarDadosCombate(personagem.id)
+        if (dadosCombate == null) {
+            println "Falha ao carregar dados de combate. Usando dados basicos do personagem."
+            return null
+        }
+
+        println "Dados de combate carregados com sucesso."
+        dadosCombate
     }
 
     static void applyFrontendCharacter(Personagem personagem) {
