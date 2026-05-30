@@ -148,9 +148,9 @@ Variaveis uteis:
 
 ```powershell
 $env:SERVER_PORT="8083"
-$env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/db_combate"
-$env:SPRING_DATASOURCE_USERNAME="postgres"
-$env:SPRING_DATASOURCE_PASSWORD="postgres"
+$env:SPRING_DATASOURCE_URL="jdbc:postgresql://aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require"
+$env:SPRING_DATASOURCE_USERNAME="postgres.egnbgiknsyzojqfddxyt"
+$env:SPRING_DATASOURCE_PASSWORD="SENHA_REAL_DO_BANCO"
 ```
 
 ## Como Testar
@@ -159,7 +159,7 @@ $env:SPRING_DATASOURCE_PASSWORD="postgres"
 .\mvnw.cmd test
 ```
 
-Os testes usam H2 em memoria com profile `test` e mockam o `CharacterClient`, entao nao precisam subir o `character-service`.
+Os testes usam PostgreSQL configurado por variaveis de ambiente e mockam o `CharacterClient`, entao nao precisam subir o `character-service`.
 
 ## Observacoes
 
