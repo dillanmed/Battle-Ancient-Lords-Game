@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InimigoService {
@@ -18,11 +19,23 @@ public class InimigoService {
     }
 
     public List<Inimigo> buscarInimigosDaFase(Integer fase) {
-        return inimigoRepository.findByFase(fase);
+        return inimigoRepository.findByFaseAndAtivoTrue(fase);
+    }
+
+    public List<Inimigo> listarInimigosAtivos() {
+        return inimigoRepository.findByAtivoTrue()
+                .stream()
+                .sorted(Comparator.comparing(Inimigo::getFase).thenComparing(Inimigo::getId))
+                .toList();
+    }
+
+    public Optional<Inimigo> buscarPorId(Long id) {
+        return inimigoRepository.findById(id)
+                .filter(inimigo -> Boolean.TRUE.equals(inimigo.getAtivo()));
     }
 
     public CombatenteSnapshot criarSnapshotParaFase(Integer fase) {
-        Inimigo inimigo = inimigoRepository.findByFase(fase)
+        Inimigo inimigo = inimigoRepository.findByFaseAndAtivoTrue(fase)
                 .stream()
                 .min(Comparator.comparing(Inimigo::getId))
                 .orElseGet(this::buscarPrimeiroInimigo);
@@ -42,7 +55,7 @@ public class InimigoService {
     }
 
     public List<CombatenteSnapshot> criarSnapshotsParaFase(Integer fase) {
-        List<Inimigo> inimigos = inimigoRepository.findByFase(fase)
+        List<Inimigo> inimigos = inimigoRepository.findByFaseAndAtivoTrue(fase)
                 .stream()
                 .sorted(Comparator.comparing(Inimigo::getId))
                 .toList();
@@ -72,7 +85,7 @@ public class InimigoService {
     }
 
     private Inimigo buscarPrimeiroInimigo() {
-        return inimigoRepository.findAll()
+        return inimigoRepository.findByAtivoTrue()
                 .stream()
                 .min(Comparator.comparing(Inimigo::getId))
                 .orElseThrow(() -> new IllegalStateException("Nenhum inimigo cadastrado"));
