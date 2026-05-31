@@ -105,3 +105,7 @@ Possible solutions: indexOf(int), indexOf(java.lang.String), indexOf(int, int), 
 	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:84)
 	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
 
+Mae 30, 2026 10:52:23 G.M. de.gurkenlabs.litiengine.gui.screens.ScreenManager display
+WARNING: Could not display the screen MainGameScreen because there is no screen with the specified name.
+Mae 30, 2026 10:53:33 G.M. de.gurkenlabs.litiengine.gui.screens.ScreenManager display
+WARNING: Could not display the screen customScreen because there is no screen with the specified name.

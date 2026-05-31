@@ -3,6 +3,7 @@
 // =========================================
 package game
 
+import game.ui.ConfiguracaoScreen
 import game.inventory.Item
 import game.inventory.inventario
 import game.auth.EsqueceuSenha
@@ -286,6 +287,7 @@ class Main {
         Game.screens().add(cadastroScreen)
         Game.screens().add(esqueceuSenhaScreen)
         Game.screens().add(customScreen)
+        Game.screens().add(new ConfiguracaoScreen())
 
         Game.screens().display("login")
 

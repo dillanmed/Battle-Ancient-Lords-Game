@@ -21,20 +21,161 @@ import java.util.List
 
 class GameRenderer extends Main {
 
+    static Rectangle configRect
+
     static void renderMenu(Graphics2D g) {
-        if (menuBackground != null) g.drawImage(menuBackground, 0, 0, WIDTH, HEIGHT, null)
-        else { g.setColor(Color.BLACK); g.fillRect(0, 0, WIDTH, HEIGHT); }
 
-        g.setColor(Color.WHITE)
-        g.setFont(getGameFont(Font.BOLD, 54f))
-        g.drawString("BATTLE OF THE", WIDTH / 2 - 250, 180)
-        g.drawString("ANCIENT LORDS", WIDTH / 2 - 290, 260)
+        // =========================================
+        // BACKGROUND
+        // =========================================
+        if (menuBackground != null) {
 
-        for (int i = 0; i < menuOptions.length; i++) {
-            g.setColor(selectedMenu == i ? Color.YELLOW : Color.WHITE)
-            g.setFont(getGameFont(Font.BOLD, 36f))
-            g.drawString(menuOptions[i], WIDTH / 2 - 140, 420 + (i * 80))
+            g.drawImage(
+                    menuBackground,
+                    0,
+                    0,
+                    WIDTH,
+                    HEIGHT,
+                    null
+            )
+
+        } else {
+
+            g.setColor(Color.BLACK)
+            g.fillRect(0, 0, WIDTH, HEIGHT)
         }
+
+        // ESCURECIMENTO
+        g.setColor(new Color(0, 0, 0, 120))
+        g.fillRect(0, 0, WIDTH, HEIGHT)
+
+        // =========================================
+        // TITULO
+        // =========================================
+        g.setColor(new Color(255, 215, 120))
+
+        g.setFont(getGameFont(Font.BOLD, 58f))
+
+        FontMetrics titleMetrics = g.getFontMetrics()
+
+        String titulo1 = "BATTLE OF THE"
+        String titulo2 = "ANCIENT LORDS"
+
+        int titulo1X =
+                (WIDTH - titleMetrics.stringWidth(titulo1)) / 2
+
+        int titulo2X =
+                (WIDTH - titleMetrics.stringWidth(titulo2)) / 2
+
+        g.drawString(
+                titulo1,
+                titulo1X,
+                180
+        )
+
+        g.drawString(
+                titulo2,
+                titulo2X,
+                260
+        )
+
+        // =========================================
+        // MENU OPTIONS
+        // =========================================
+        for (int i = 0; i < menuOptions.length; i++) {
+
+            boolean selecionado = selectedMenu == i
+
+            // CAIXA BOTAO
+            g.setColor(
+                    selecionado
+                            ? new Color(255, 215, 120, 80)
+                            : new Color(20, 20, 30, 170)
+            )
+
+            g.fillRoundRect(
+                    WIDTH / 2 - 220,
+                    375 + (i * 80),
+                    440,
+                    55,
+                    18,
+                    18
+            )
+
+            // TEXTO
+            g.setColor(
+                    selecionado
+                            ? Color.YELLOW
+                            : Color.WHITE
+            )
+
+            g.setFont(getGameFont(Font.BOLD, 34f))
+
+            FontMetrics metrics = g.getFontMetrics()
+
+            int textWidth =
+                    metrics.stringWidth(menuOptions[i])
+
+            int textX =
+                    (WIDTH - textWidth) / 2
+
+            g.drawString(
+                    menuOptions[i],
+                    textX,
+                    415 + (i * 80)
+            )
+        }
+
+        // =========================================
+        // BOTAO CONFIG
+        // =========================================
+        configRect = new Rectangle(
+                WIDTH - 95,
+                25,
+                60,
+                60
+        )
+
+        g.setColor(new Color(20, 20, 30, 220))
+
+        g.fillRoundRect(
+                configRect.x,
+                configRect.y,
+                configRect.width,
+                configRect.height,
+                15,
+                15
+        )
+
+        g.setColor(new Color(255, 215, 120))
+
+        g.setFont(new Font("Arial", Font.BOLD, 38))
+
+        g.drawString(
+                "⚙",
+                configRect.x + 13,
+                configRect.y + 42
+        )
+
+        // =========================================
+        // RODAPE
+        // =========================================
+        g.setFont(getGameFont(Font.PLAIN, 18f))
+        g.setColor(new Color(220, 220, 220))
+
+        String rodape =
+                "Use SETAS para navegar e ENTER para selecionar"
+
+        FontMetrics rodapeMetrics = g.getFontMetrics()
+
+        int rodapeX =
+                (WIDTH - rodapeMetrics.stringWidth(rodape)) / 2
+
+        g.drawString(
+                rodape,
+                rodapeX,
+                HEIGHT - 40
+        )
     }
 
     static void renderCharacterSelect(Graphics2D g) {
