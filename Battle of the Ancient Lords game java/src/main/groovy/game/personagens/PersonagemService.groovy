@@ -149,6 +149,45 @@ class PersonagemService {
         }
     }
 
+    Personagem adicionarExperiencia(String personagemId, int experiencia) {
+        try {
+            Map resposta = apiClient.put("$PERSONAGENS_API_PATH/$personagemId/experiencia", [
+                    experiencia: experiencia
+            ])
+            Map dados = extrairPersonagem(resposta)
+            dados ? fromBackend(dados) : null
+        } catch (Exception e) {
+            println("Erro ao adicionar experiencia: ${e.message}")
+            null
+        }
+    }
+
+    Personagem evoluirPersonagem(String personagemId) {
+        try {
+            println("Tentando evoluir personagem...")
+            Map resposta = apiClient.put("$PERSONAGENS_API_PATH/$personagemId/evoluir", [:])
+            Map dados = extrairPersonagem(resposta)
+            dados ? fromBackend(dados) : null
+        } catch (Exception e) {
+            println("Erro ao evoluir personagem: ${e.message}")
+            null
+        }
+    }
+
+    Personagem sincronizarExperienciaEvolucao(String personagemId, int experiencia) {
+        if (adicionarExperiencia(personagemId, experiencia) == null) {
+            return null
+        }
+        if (evoluirPersonagem(personagemId) == null) {
+            return null
+        }
+        Personagem personagemAtualizado = buscarDadosCombate(personagemId)
+        if (personagemAtualizado != null) {
+            println("Dados de combate atualizados apos evolucao.")
+        }
+        personagemAtualizado
+    }
+
     List buscarHabilidadesDoPersonagem(String id) {
         try {
             Map resposta = apiClient.get("$PERSONAGENS_API_PATH/$id/habilidades")

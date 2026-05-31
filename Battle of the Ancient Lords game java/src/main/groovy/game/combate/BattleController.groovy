@@ -3,11 +3,13 @@ package game.combate
 import game.Main
 import game.effects.FloatingText
 import game.services.ServiceRegistry
+import game.types.Personagem
 
 import java.awt.Color
 import java.awt.image.BufferedImage
 
 class BattleController extends Main {
+    static Long xpSincronizadoNestaBatalha = null
 
     static void executeClassSpecialSkill() {
         if (currentBattleId == null) {
@@ -112,6 +114,7 @@ class BattleController extends Main {
             Thread.sleep(1500)
             String resultado = batalha?.resultado?.toString()
             if (resultado == "VITORIA") {
+                grantBattleVictoryRewards()
                 if (currentPhase < 6) {
                     startPhaseTransition()
                 } else {
@@ -216,6 +219,7 @@ class BattleController extends Main {
             Thread.sleep(1500)
             String resultado = batalha?.resultado?.toString()
             if (resultado == "VITORIA") {
+                grantBattleVictoryRewards()
                 if (currentPhase < 6) {
                     startPhaseTransition()
                 } else {
@@ -240,8 +244,17 @@ class BattleController extends Main {
     static void grantKillRewards(int enemyIndex) {
         int manaGanhar = 5 + random.nextInt(6)
         playerMana = Math.min(maxMana, playerMana + manaGanhar)
+    }
 
-        double randomPercent = 0.25 + (random.nextDouble() * 0.25)
+    static void grantBattleVictoryRewards() {
+        if (currentBattleId != null && xpSincronizadoNestaBatalha == currentBattleId) {
+            println "XP ja sincronizado para esta batalha. Ignorando chamada duplicada."
+            return
+        }
+        xpSincronizadoNestaBatalha = currentBattleId
+
+        int inimigosDaBatalha = Math.max(1, enemyIds.count { it != null })
+        double randomPercent = (0.25 + (random.nextDouble() * 0.25)) * inimigosDaBatalha
         int xpGanho = (int) (maxXP * randomPercent)
         playerXP += xpGanho
 
@@ -252,6 +265,34 @@ class BattleController extends Main {
             maxXP = (int)(maxXP * 1.3)
             playerHP = Math.min(maxHP, playerHP + 30)
             playerMana = Math.min(maxMana, playerMana + 15)
+        }
+
+        sincronizarXpVitoriaComBackend(xpGanho)
+    }
+
+    static void sincronizarXpVitoriaComBackend(int xpGanho) {
+        if (!personagemBackendCarregado || currentPersonagemId == null || currentPersonagemId <= 0L) {
+            println "Falha ao sincronizar XP. Mantendo progressao local."
+            return
+        }
+
+        try {
+            println "Vitoria detectada. Sincronizando XP com servico-personagem..."
+            Personagem personagemAtualizado = ServiceRegistry.personagemService.sincronizarExperienciaEvolucao(
+                    currentPersonagemId.toString(),
+                    xpGanho
+            )
+
+            if (personagemAtualizado == null) {
+                println "Falha ao sincronizar XP. Mantendo progressao local."
+                return
+            }
+
+            applyFrontendCharacter(personagemAtualizado)
+            println "XP sincronizado com sucesso."
+        } catch (Exception e) {
+            println "Falha ao sincronizar XP. Mantendo progressao local."
+            println "Erro ao sincronizar XP com servico-personagem: ${e.message}"
         }
     }
 
