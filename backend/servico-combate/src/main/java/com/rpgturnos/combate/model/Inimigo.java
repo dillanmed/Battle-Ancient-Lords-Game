@@ -34,6 +34,16 @@ public class Inimigo {
 
     private Integer defesa;
 
+    private Integer recompensaXp;
+
+    private Boolean ativo;
+
+    private String spriteKey;
+
+    private String tipo;
+
+    private String descricao;
+
     private Boolean boss;
 
     private Integer recompensaXp;

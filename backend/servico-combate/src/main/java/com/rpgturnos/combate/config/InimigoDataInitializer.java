@@ -61,6 +61,7 @@ public class InimigoDataInitializer {
                     inimigo("Minotauro", 6, 6, 550, 60, 35, 300, "Minotauro", "BOSS", "Lorde final da arena antiga.", true)
             );
 
+
             seeds.forEach(seed -> upsertInimigo(inimigoRepository, seed));
             desativarInimigosGerenciadosForaDaLista(inimigoRepository, seeds);
         };
@@ -123,12 +124,14 @@ public class InimigoDataInitializer {
                 .vidaMaxima(vidaMaxima)
                 .ataque(ataque)
                 .defesa(defesa)
-                .boss(boss)
                 .recompensaXp(recompensaXp)
                 .ativo(true)
                 .spriteKey(spriteKey)
                 .tipo(tipo)
                 .descricao(descricao)
+                .boss(boss)
                 .build();
     }
+
+
 }
