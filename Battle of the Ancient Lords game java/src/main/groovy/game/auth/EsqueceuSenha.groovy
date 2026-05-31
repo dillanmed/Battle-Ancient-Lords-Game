@@ -11,16 +11,19 @@ import java.awt.Color
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.FontMetrics
+import java.awt.GraphicsEnvironment
 import java.awt.Graphics2D
 import java.awt.Point
 import java.awt.Rectangle
-import java.awt.RenderingHints
+import java.awt.Image
 import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
 
 class EsqueceuSenha extends Screen {
+    private BufferedImage background
+    private BufferedImage confirmarButtonImage
+    private Font medievalFont
 
-<<<<<<< HEAD
     private String email = ''
     private boolean emailSelecionado = false
 
@@ -28,38 +31,14 @@ class EsqueceuSenha extends Screen {
     private boolean mostrarPopup = false
     private boolean popupSucesso = false
     private long tempoPopup = 0
-=======
-    // =========================================
-    // CAMPOS
-    // =========================================
-
-    private String email = ''
-    private String mensagem = ''
-
-    private boolean typingEmail = false
->>>>>>> d9c878c (tela configuraçoes)
 
     private Rectangle emailRect
     private Rectangle confirmarRect
     private Rectangle voltarRect
-<<<<<<< HEAD
-=======
-
-    // =========================================
-    // BACKGROUND
-    // =========================================
-
-    private BufferedImage background
->>>>>>> d9c878c (tela configuraçoes)
-
-    // =========================================
-    // CONSTRUTOR
-    // =========================================
 
     EsqueceuSenha() {
 
         super('esqueceuSenha')
-<<<<<<< HEAD
         loadAssets()
         setupKeyboardInput()
         setupMouseInput()
@@ -105,212 +84,129 @@ class EsqueceuSenha extends Screen {
     }
 
     private void setupKeyboardInput() {
-=======
-
-        loadBackground()
-
-        setupInput()
-    }
-
-    // =========================================
-    // CARREGA BACKGROUND
-    // =========================================
-
-    private void loadBackground() {
-
-        try {
-
-            background = ImageIO.read(
-                    getClass().getResourceAsStream(
-                            "/Background/Background do jogo.png"
-                    )
-            )
-
-            println "[ESQUECEU SENHA] Background carregado com sucesso!"
-
-        } catch (Exception e) {
-
-            println "[ERRO] Falha ao carregar background:"
-            e.printStackTrace()
-        }
-    }
-
-    // =========================================
-    // INPUTS
-    // =========================================
-
-    private void setupInput() {
-
-        // DIGITAR
->>>>>>> d9c878c (tela configuraçoes)
         Input.keyboard().onKeyTyped { event ->
 
             if (!isCurrentScreen()) {
                 return
             }
 
-<<<<<<< HEAD
             if (!emailSelecionado) {
-                return
-=======
-            if (!typingEmail) {
                 return
             }
 
             char c = event.keyChar
-
-            if (
-                    !Character.isISOControl(c) &&
-                            email.length() < 40
-            ) {
-
-                email += c
->>>>>>> d9c878c (tela configuraçoes)
+            if (c == KeyEvent.CHAR_UNDEFINED || Character.isISOControl(c)) {
+                return
             }
+
+            if (!Character.isLetterOrDigit(c) && '@._-'.indexOf(c) == -1) {
+                return
+            }
+
+            if (email.length() >= 28) {
+                return
+            }
+
+            email += c
         }
 
-        // BACKSPACE
         Input.keyboard().onKeyReleased { event ->
 
             if (!isCurrentScreen()) {
                 return
             }
 
-<<<<<<< HEAD
             if (event.keyCode == KeyEvent.VK_BACK_SPACE && emailSelecionado && email.length() > 0) {
                 email = email.substring(0, email.length() - 1)
-=======
-            if (!typingEmail) {
-                return
-            }
-
-            if (
-                    event.keyCode == KeyEvent.VK_BACK_SPACE &&
-                            email.length() > 0
-            ) {
-
-                email = email.substring(
-                        0,
-                        email.length() - 1
-                )
->>>>>>> d9c878c (tela configuraçoes)
             }
         }
+    }
 
-        // CURSOR
+    private void setupMouseInput() {
         Input.mouse().onMoved { event ->
-<<<<<<< HEAD
             if (isCurrentScreen()) {
                 updateCursor(event.point)
             }
-=======
-
-            if (!isCurrentScreen()) {
-                return
-            }
-
-            updateCursor(event.point)
->>>>>>> d9c878c (tela configuraçoes)
         }
 
-        // CLIQUES
         Input.mouse().onClicked { event ->
 
             if (!isCurrentScreen()) {
                 return
             }
 
-<<<<<<< HEAD
             Point mousePosition = event.point
 
             if (voltarRect?.contains(mousePosition)) {
                 emailSelecionado = false
-=======
-            Point mouse = event.point
-
-            // INPUT EMAIL
-            if (emailRect?.contains(mouse)) {
-
-                typingEmail = true
-                return
-            }
-
-            // BOTAO VOLTAR
-            if (voltarRect?.contains(mouse)) {
-
-                typingEmail = false
-
->>>>>>> d9c878c (tela configuraçoes)
                 Game.screens().display('login')
 
                 return
             }
 
-<<<<<<< HEAD
             emailSelecionado = emailRect?.contains(mousePosition) ?: false
 
             if (confirmarRect?.contains(mousePosition)) {
                 validarEmail()
-=======
-            // BOTAO CONFIRMAR
-            if (confirmarRect?.contains(mouse)) {
-
-                typingEmail = false
-
-                try {
-
-                    ServiceRegistry.authService
-                            .solicitarRecuperacaoSenha(email)
-
-                    mensagem =
-                            "Email de recuperacao enviado!"
-
-                } catch (Exception e) {
-
-                    mensagem =
-                            "Erro ao enviar recuperacao."
-                }
->>>>>>> d9c878c (tela configuraçoes)
             }
         }
     }
-
-    // =========================================
-    // CURSOR
-    // =========================================
-
-    private void updateCursor(Point mouse) {
-
-        boolean overAction =
-                emailRect?.contains(mouse) ||
-                        confirmarRect?.contains(mouse) ||
-                        voltarRect?.contains(mouse)
-
-        Game.window().renderComponent.cursor =
-                overAction
-                        ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-                        : Cursor.getDefaultCursor()
-    }
-
-    // =========================================
-    // TELA ATUAL
-    // =========================================
 
     private boolean isCurrentScreen() {
 
         return Game.screens().current()?.name == name
     }
 
-    // =========================================
-    // RENDER
-    // =========================================
+    private void validarEmail() {
+        if (!emailValido(email)) {
+            mostrarPopup('Digite um e-mail valido.', false)
+            return
+        }
+
+        try {
+            String mensagem = ServiceRegistry.authService.solicitarRecuperacaoSenha(email)
+            mostrarPopup(mensagem ?: 'E-mail de recuperacao enviado.', true)
+        } catch (Exception exception) {
+            mostrarPopup(exception.message ?: 'Nao foi possivel enviar.', false)
+        }
+    }
+
+    private boolean emailValido(String valor) {
+        String emailTratado = valor?.trim() ?: ''
+
+        emailTratado.contains('@') &&
+                emailTratado.contains('.') &&
+                emailTratado.indexOf('@') > 0 &&
+                emailTratado.lastIndexOf('.') > emailTratado.indexOf('@') + 1 &&
+                emailTratado.lastIndexOf('.') < emailTratado.length() - 1
+    }
+
+    private void mostrarPopup(String mensagem, boolean sucesso) {
+        mensagemPopup = mensagem
+        popupSucesso = sucesso
+        mostrarPopup = true
+        tempoPopup = System.currentTimeMillis()
+    }
+
+    private void updateCursor(Point mousePosition) {
+        if (emailRect?.contains(mousePosition)) {
+            Game.window().renderComponent.cursor = Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR)
+            return
+        }
+
+        if (confirmarRect?.contains(mousePosition) || voltarRect?.contains(mousePosition)) {
+            Game.window().renderComponent.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            return
+        }
+
+        Game.window().renderComponent.cursor = Cursor.defaultCursor
+    }
 
     @Override
     void render(Graphics2D g) {
 
         super.render(g)
 
-<<<<<<< HEAD
         int screenWidth = Game.window().width
         int screenHeight = Game.window().height
 
@@ -442,232 +338,3 @@ class EsqueceuSenha extends Screen {
         g.drawString(text, x, y)
     }
 }
-=======
-        g.setRenderingHint(
-                RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON
-        )
-
-        int width = Game.window().width as int
-        int height = Game.window().height as int
-
-        // =========================================
-        // BACKGROUND
-        // =========================================
-
-        if (background != null) {
-
-            g.drawImage(
-                    background,
-                    0,
-                    0,
-                    width,
-                    height,
-                    null
-            )
-
-        } else {
-
-            g.setColor(new Color(15, 15, 25))
-            g.fillRect(0, 0, width, height)
-        }
-
-        // ESCURECIMENTO
-        g.setColor(new Color(0, 0, 0, 170))
-        g.fillRect(0, 0, width, height)
-
-        // =========================================
-        // PAINEL CENTRAL
-        // =========================================
-
-        int panelWidth = 700
-        int panelHeight = 350
-
-        int panelX = (width - panelWidth) / 2
-        int panelY = (height - panelHeight) / 2
-
-        g.setColor(new Color(20, 20, 35, 230))
-
-        g.fillRoundRect(
-                panelX,
-                panelY,
-                panelWidth,
-                panelHeight,
-                25,
-                25
-        )
-
-        g.setColor(new Color(180, 140, 60))
-
-        g.setStroke(new BasicStroke(4))
-
-        g.drawRoundRect(
-                panelX,
-                panelY,
-                panelWidth,
-                panelHeight,
-                25,
-                25
-        )
-
-        // =========================================
-        // TITULO
-        // =========================================
-
-        g.setFont(new Font("Serif", Font.BOLD, 42))
-
-        String titulo = "RECUPERAR SENHA"
-
-        FontMetrics tituloMetrics =
-                g.getFontMetrics()
-
-        int tituloX =
-                (width - tituloMetrics.stringWidth(titulo)) / 2
-
-        g.setColor(new Color(255, 220, 120))
-
-        g.drawString(
-                titulo,
-                tituloX,
-                panelY + 70
-        )
-
-        // =========================================
-        // INPUT EMAIL
-        // =========================================
-
-        emailRect = new Rectangle(
-                panelX + 100,
-                panelY + 120,
-                500,
-                60
-        )
-
-        g.setColor(new Color(35, 35, 50))
-
-        g.fillRoundRect(
-                emailRect.x,
-                emailRect.y,
-                emailRect.width,
-                emailRect.height,
-                15,
-                15
-        )
-
-        g.setColor(
-                typingEmail
-                        ? new Color(90, 170, 255)
-                        : Color.WHITE
-        )
-
-        g.setStroke(new BasicStroke(3))
-
-        g.drawRoundRect(
-                emailRect.x,
-                emailRect.y,
-                emailRect.width,
-                emailRect.height,
-                15,
-                15
-        )
-
-        g.setFont(new Font("Arial", Font.PLAIN, 22))
-
-        String texto =
-                email.isEmpty()
-                        ? "Digite seu email..."
-                        : email
-
-        g.drawString(
-                texto,
-                emailRect.x + 18,
-                emailRect.y + 38
-        )
-
-        // =========================================
-        // BOTAO CONFIRMAR
-        // =========================================
-
-        confirmarRect = new Rectangle(
-                panelX + 100,
-                panelY + 220,
-                220,
-                60
-        )
-
-        g.setColor(new Color(50, 120, 255))
-
-        g.fillRoundRect(
-                confirmarRect.x,
-                confirmarRect.y,
-                confirmarRect.width,
-                confirmarRect.height,
-                15,
-                15
-        )
-
-        g.setColor(Color.WHITE)
-
-        g.setFont(new Font("Arial", Font.BOLD, 22))
-
-        g.drawString(
-                "CONFIRMAR",
-                confirmarRect.x + 35,
-                confirmarRect.y + 38
-        )
-
-        // =========================================
-        // BOTAO VOLTAR
-        // =========================================
-
-        voltarRect = new Rectangle(
-                panelX + 380,
-                panelY + 220,
-                220,
-                60
-        )
-
-        g.setColor(new Color(180, 60, 60))
-
-        g.fillRoundRect(
-                voltarRect.x,
-                voltarRect.y,
-                voltarRect.width,
-                voltarRect.height,
-                15,
-                15
-        )
-
-        g.setColor(Color.WHITE)
-
-        g.drawString(
-                "VOLTAR",
-                voltarRect.x + 60,
-                voltarRect.y + 38
-        )
-
-        // =========================================
-        // MENSAGEM
-        // =========================================
-
-        if (!mensagem.isEmpty()) {
-
-            g.setFont(new Font("Arial", Font.BOLD, 20))
-
-            FontMetrics metrics =
-                    g.getFontMetrics()
-
-            int msgX =
-                    (width - metrics.stringWidth(mensagem)) / 2
-
-            g.setColor(new Color(120, 255, 120))
-
-            g.drawString(
-                    mensagem,
-                    msgX,
-                    panelY + 330
-            )
-        }
-    }
-}
->>>>>>> d9c878c (tela configuraçoes)
