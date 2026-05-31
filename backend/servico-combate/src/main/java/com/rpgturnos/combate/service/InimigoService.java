@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class InimigoService {
@@ -18,10 +17,6 @@ public class InimigoService {
         this.inimigoRepository = inimigoRepository;
     }
 
-    public List<Inimigo> buscarInimigosDaFase(Integer fase) {
-        return inimigoRepository.findByFaseAndAtivoTrue(fase);
-    }
-
     public List<Inimigo> listarInimigosAtivos() {
         return inimigoRepository.findByAtivoTrue()
                 .stream()
@@ -29,9 +24,14 @@ public class InimigoService {
                 .toList();
     }
 
-    public Optional<Inimigo> buscarPorId(Long id) {
+    public Inimigo buscarPorId(Long id) {
         return inimigoRepository.findById(id)
-                .filter(inimigo -> Boolean.TRUE.equals(inimigo.getAtivo()));
+                .filter(inimigo -> Boolean.TRUE.equals(inimigo.getAtivo()))
+                .orElseThrow(() -> new IllegalArgumentException("Inimigo ativo nao encontrado"));
+    }
+
+    public List<Inimigo> buscarInimigosDaFase(Integer fase) {
+        return inimigoRepository.findByFaseAndAtivoTrue(fase);
     }
 
     public CombatenteSnapshot criarSnapshotParaFase(Integer fase) {

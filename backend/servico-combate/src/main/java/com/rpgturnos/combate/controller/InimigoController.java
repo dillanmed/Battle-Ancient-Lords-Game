@@ -27,9 +27,7 @@ public class InimigoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Inimigo> buscarPorId(@PathVariable Long id) {
-        return inimigoService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(inimigoService.buscarPorId(id));
     }
 
     @GetMapping("/fase/{fase}")

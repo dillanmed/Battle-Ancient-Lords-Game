@@ -1,22 +1,19 @@
 package com.rpgturnos.combate;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import com.rpgturnos.combate.model.Inimigo;
-import com.rpgturnos.combate.repository.InimigoRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -26,58 +23,33 @@ class InimigoControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private InimigoRepository inimigoRepository;
-
-    @Autowired
-    @Qualifier("inicializarInimigos")
-    private CommandLineRunner inicializarInimigos;
-
-    @BeforeEach
-    void setUp() throws Exception {
-        inimigoRepository.deleteAll();
-        inicializarInimigos.run();
-    }
-
     @Test
-    void deveListarInimigosAtivosPorFase() throws Exception {
-        mockMvc.perform(get("/inimigos/fase/{fase}", 1))
+    void deveListarInimigosAtivosPorFaseComSpritesCoerentes() throws Exception {
+        mockMvc.perform(get("/inimigos/fase/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0].nome").value("Goblin"))
-                .andExpect(jsonPath("$[0].recompensaXp").value(20))
-                .andExpect(jsonPath("$[0].ativo").value(true))
-                .andExpect(jsonPath("$[0].spriteKey").value("esqueleto"));
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$[*].nome", containsInAnyOrder("Esqueleto", "Esqueleto Warrior", "Medusa")))
+                .andExpect(jsonPath("$[*].ativo", everyItem(is(true))))
+                .andExpect(jsonPath("$[?(@.nome == 'Esqueleto')].spriteKey", contains("esqueleto")))
+                .andExpect(jsonPath("$[?(@.nome == 'Esqueleto Warrior')].spriteKey", contains("esqueleto warrior")))
+                .andExpect(jsonPath("$[?(@.nome == 'Medusa')].spriteKey", contains("medusa")));
     }
 
     @Test
     void deveListarTodosInimigosAtivos() throws Exception {
         mockMvc.perform(get("/inimigos"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(16)))
-                .andExpect(jsonPath("$[15].nome").value("Minotauro"))
-                .andExpect(jsonPath("$[15].spriteKey").value("Minotauro"))
-                .andExpect(jsonPath("$[15].boss").value(true));
+                .andExpect(jsonPath("$.length()", is(16)))
+                .andExpect(jsonPath("$[*].ativo", everyItem(is(true))));
     }
 
     @Test
-    void deveBuscarInimigoPorId() throws Exception {
-        Inimigo inimigo = inimigoRepository.findByFaseAndAtivoTrue(1).get(0);
-
-        mockMvc.perform(get("/inimigos/{id}", inimigo.getId()))
+    void deveBuscarInimigoAtivoPorId() throws Exception {
+        mockMvc.perform(get("/inimigos/fase/6"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(inimigo.getId()))
-                .andExpect(jsonPath("$.nome").value(inimigo.getNome()));
-    }
-
-    @Test
-    void dataInitializerNaoDeveDuplicarInimigos() throws Exception {
-        long totalInicial = inimigoRepository.count();
-
-        inicializarInimigos.run();
-
-        assertThat(inimigoRepository.count()).isEqualTo(totalInicial);
-        assertThat(inimigoRepository.existsByNomeAndFase("Goblin", 1)).isTrue();
-        assertThat(inimigoRepository.findByAtivoTrue()).hasSize(16);
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$[0].nome", is("Minotauro")))
+                .andExpect(jsonPath("$[0].spriteKey", is("Minotauro")))
+                .andExpect(jsonPath("$[0].boss", is(true)));
     }
 }

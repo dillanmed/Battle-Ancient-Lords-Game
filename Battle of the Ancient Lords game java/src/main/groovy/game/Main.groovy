@@ -112,6 +112,10 @@ class Main {
     static int selectedCharacter = 0
     static String[] characters = ["WARRIOR", "ARCHER", "MAGE"]
     static String currentClass = "WARRIOR"
+    static Map<String, Map<String, Integer>> previewStatsPorClasse = [:]
+    static boolean previewPersonagensCarregado = false
+    static Long previewUsuarioIdCarregado = null
+    static boolean previewPersonagensCarregando = false
 
     // =========================================
     // PLAYER LIVES & RPG STATS
@@ -126,6 +130,7 @@ class Main {
     static int maxXP = 100
     static int damageBonus = 0
     static Long currentPersonagemId = 1L
+    static boolean personagemBackendCarregado = false
 
     static int playerLives = 5
     static boolean isRespawning = false
@@ -340,6 +345,7 @@ class Main {
                         case KeyEvent.VK_ENTER:
                             if (selectedMenu == 0) {
                                 gameState = CHARACTER_SELECT
+                                carregarPreviewPersonagensUsuario()
                             } else {
                                 System.exit(0)
                             }
@@ -463,6 +469,7 @@ class Main {
         playerXP = 0
         maxXP = 100
         damageBonus = 0
+        personagemBackendCarregado = false
 
         if (currentClass == "WARRIOR") {
             maxHP = 120; playerHP = 120
@@ -524,6 +531,95 @@ class Main {
         return 1L
     }
 
+    static void carregarPreviewPersonagensUsuario() {
+        Long usuarioId = obterUsuarioIdAtual()
+
+        if (previewPersonagensCarregado && previewUsuarioIdCarregado == usuarioId) {
+            return
+        }
+        if (previewPersonagensCarregando && previewUsuarioIdCarregado == usuarioId) {
+            return
+        }
+
+        previewPersonagensCarregando = true
+        previewUsuarioIdCarregado = usuarioId
+        previewPersonagensCarregado = false
+        previewStatsPorClasse = [:]
+        Long usuarioIdPreview = usuarioId
+
+        Thread.start {
+            try {
+                println "Carregando preview de personagens do usuario..."
+                List<Personagem> personagens = ServiceRegistry.personagemService.listarPersonagensPorUsuario(usuarioIdPreview)
+
+                if (ServiceRegistry.personagemService.houveFalhaIntegracao()) {
+                    println "Falha ao carregar preview do backend. Usando valores locais."
+                    if (previewUsuarioIdCarregado == usuarioIdPreview) {
+                        previewStatsPorClasse = [:]
+                    }
+                    return
+                }
+
+                Map<String, Map<String, Integer>> statsCarregados = [:]
+                personagens.each { Personagem personagem ->
+                    String classePreview = classeParaPreview(personagem?.classe)
+                    if (classePreview) {
+                        int hp = Math.max(personagem.maxHp, personagem.hp)
+                        int mp = Math.max(personagem.maxMana, personagem.mana)
+                        statsCarregados[classePreview] = [hp: hp, mp: mp]
+                        println "Preview carregado para ${classePreview}: HP ${hp} / MP ${mp}"
+                    }
+                }
+
+                if (previewUsuarioIdCarregado == usuarioIdPreview) {
+                    previewStatsPorClasse = statsCarregados
+                    characters.each { String classe ->
+                        if (!previewStatsPorClasse.containsKey(classe)) {
+                            println "Nenhum personagem salvo para ${classe}. Usando preview padrao."
+                        }
+                    }
+                    previewPersonagensCarregado = true
+                }
+            } catch (Exception e) {
+                if (previewUsuarioIdCarregado == usuarioIdPreview) {
+                    previewStatsPorClasse = [:]
+                }
+                println "Falha ao carregar preview do backend. Usando valores locais."
+                println "Erro ao carregar preview de personagens: ${e.message}"
+            } finally {
+                if (previewUsuarioIdCarregado == usuarioIdPreview) {
+                    previewPersonagensCarregando = false
+                }
+            }
+        }
+    }
+
+    static int obterHpPreviewClasse(String classe, int hpPadrao) {
+        Map<String, Integer> stats = previewStatsPorClasse[classeParaPreview(classe)]
+        stats?.hp ?: hpPadrao
+    }
+
+    static int obterMpPreviewClasse(String classe, int mpPadrao) {
+        Map<String, Integer> stats = previewStatsPorClasse[classeParaPreview(classe)]
+        stats?.mp ?: mpPadrao
+    }
+
+    static String classeParaPreview(String classe) {
+        switch (classe?.trim()?.toUpperCase()) {
+            case "GUERREIRO":
+            case "WARRIOR":
+                return "WARRIOR"
+            case "ARQUEIRO":
+            case "ARCHER":
+                return "ARCHER"
+            case "MAGO":
+            case "MAGE":
+                return "MAGE"
+            default:
+                return null
+        }
+    }
+
     static Personagem buscarDadosCombatePersonagem(Personagem personagem) {
         if (!personagem?.id) {
             println "Falha ao carregar dados de combate. Usando dados basicos do personagem."
@@ -545,6 +641,7 @@ class Main {
         currentClass = personagem.classe ?: currentClass
         if (personagem.id?.isLong()) {
             currentPersonagemId = personagem.id as Long
+            personagemBackendCarregado = currentPersonagemId > 0L
         }
         playerLives = 5
         isRespawning = false

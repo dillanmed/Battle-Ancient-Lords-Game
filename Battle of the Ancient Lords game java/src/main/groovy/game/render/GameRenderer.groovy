@@ -192,9 +192,21 @@ class GameRenderer extends Main {
             int displayHP = 0, displayMP = 0
             List<BufferedImage> previewList = null
 
-            if (characters[i] == "WARRIOR") { displayHP = 120; displayMP = 30; previewList = menuPreviewWarrior }
-            else if (characters[i] == "ARCHER") { displayHP = 90; displayMP = 60; previewList = menuPreviewArcher }
-            else if (characters[i] == "MAGE") { displayHP = 70; displayMP = 120; previewList = menuPreviewMage }
+            if (characters[i] == "WARRIOR") {
+                displayHP = Main.obterHpPreviewClasse("WARRIOR", 120)
+                displayMP = Main.obterMpPreviewClasse("WARRIOR", 30)
+                previewList = menuPreviewWarrior
+            }
+            else if (characters[i] == "ARCHER") {
+                displayHP = Main.obterHpPreviewClasse("ARCHER", 90)
+                displayMP = Main.obterMpPreviewClasse("ARCHER", 60)
+                previewList = menuPreviewArcher
+            }
+            else if (characters[i] == "MAGE") {
+                displayHP = Main.obterHpPreviewClasse("MAGE", 70)
+                displayMP = Main.obterMpPreviewClasse("MAGE", 120)
+                previewList = menuPreviewMage
+            }
 
             g.setColor(selectedCharacter == i ? new Color(255, 215, 0) : new Color(80, 80, 100))
             g.fillRoundRect(x, 220, 220, 320, 30, 30)
