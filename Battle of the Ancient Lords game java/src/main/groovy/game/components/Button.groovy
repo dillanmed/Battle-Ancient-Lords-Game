@@ -16,7 +16,7 @@ class Button {
 
     void render(Graphics2D g) {
         if (image != null && bounds != null) {
-            g.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height, null)
+            g.drawImage(image, bounds.@x, bounds.@y, bounds.@width, bounds.@height, null)
         }
     }
 

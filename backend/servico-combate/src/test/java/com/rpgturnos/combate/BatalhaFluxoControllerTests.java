@@ -178,7 +178,8 @@ class BatalhaFluxoControllerTests {
                         .content("""
                                 {
                                   "usuarioId": 1,
-                                  "personagemId": 10
+                                  "personagemId": 10,
+                                  "fase": 5
                                 }
                                 """))
                 .andExpect(status().isOk())

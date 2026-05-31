@@ -9,4 +9,5 @@ public class CriarBatalhaRequest {
 
     private Long usuarioId;
     private Long personagemId;
+    private Integer fase;
 }

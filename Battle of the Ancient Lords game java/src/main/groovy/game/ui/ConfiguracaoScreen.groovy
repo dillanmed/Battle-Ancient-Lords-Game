@@ -99,10 +99,10 @@ class ConfiguracaoScreen extends Screen {
         g.setColor(new Color(180, 60, 60))
 
         g.fillRoundRect(
-                voltarRect.x,
-                voltarRect.y,
-                voltarRect.width,
-                voltarRect.height,
+                voltarRect.@x,
+                voltarRect.@y,
+                voltarRect.@width,
+                voltarRect.@height,
                 15,
                 15
         )
@@ -113,8 +113,8 @@ class ConfiguracaoScreen extends Screen {
 
         g.drawString(
                 "VOLTAR",
-                voltarRect.x + 65,
-                voltarRect.y + 38
+                voltarRect.@x + 65,
+                voltarRect.@y + 38
         )
     }
 }

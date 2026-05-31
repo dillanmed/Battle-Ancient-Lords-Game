@@ -94,7 +94,7 @@ class GameRenderer extends Main {
             )
 
             g.fillRoundRect(
-                    WIDTH / 2 - 220,
+                    WIDTH.intdiv(2) - 220,
                     375 + (i * 80),
                     440,
                     55,
@@ -139,10 +139,10 @@ class GameRenderer extends Main {
         g.setColor(new Color(20, 20, 30, 220))
 
         g.fillRoundRect(
-                configRect.x,
-                configRect.y,
-                configRect.width,
-                configRect.height,
+                configRect.@x,
+                configRect.@y,
+                configRect.@width,
+                configRect.@height,
                 15,
                 15
         )
@@ -153,8 +153,8 @@ class GameRenderer extends Main {
 
         g.drawString(
                 "⚙",
-                configRect.x + 13,
-                configRect.y + 42
+                configRect.@x + 13,
+                configRect.@y + 42
         )
 
         // =========================================
@@ -184,9 +184,9 @@ class GameRenderer extends Main {
 
         g.setColor(Color.WHITE)
         g.setFont(getGameFont(Font.BOLD, 52f))
-        g.drawString("SELECT YOUR CLASS", WIDTH / 2 - 300, 100)
+        g.drawString("SELECT YOUR CLASS", WIDTH.intdiv(2) - 300, 100)
 
-        int startX = WIDTH / 2 - 380
+        int startX = WIDTH.intdiv(2) - 380
         for (int i = 0; i < characters.length; i++) {
             int x = startX + (i * 320)
             int displayHP = 0, displayMP = 0
@@ -232,12 +232,12 @@ class GameRenderer extends Main {
 
         g.setColor(new Color(220, 30, 30))
         g.setFont(getGameFont(Font.BOLD, 72f))
-        g.drawString("GAME OVER", WIDTH / 2 - 200, HEIGHT / 3)
+        g.drawString("GAME OVER", WIDTH.intdiv(2) - 200, HEIGHT.intdiv(3))
 
         for (int i = 0; i < gameOverOptions.length; i++) {
             g.setColor(selectedGameOverOpt == i ? Color.YELLOW : Color.WHITE)
             g.setFont(getGameFont(Font.BOLD, 32f))
-            g.drawString(gameOverOptions[i], WIDTH / 2 - 150, HEIGHT / 2 + 60 + (i * 70))
+            g.drawString(gameOverOptions[i], WIDTH.intdiv(2) - 150, HEIGHT.intdiv(2) + 60 + (i * 70))
         }
     }
 
@@ -254,7 +254,7 @@ class GameRenderer extends Main {
             g.setFont(new Font("Arial", Font.BOLD, 76))
         }
 
-        g.drawString("VICTORY!", WIDTH / 2 - 220, HEIGHT / 3)
+        g.drawString("VICTORY!", WIDTH.intdiv(2) - 220, HEIGHT.intdiv(3))
 
         g.setColor(Color.WHITE)
 
@@ -266,8 +266,8 @@ class GameRenderer extends Main {
 
         g.drawString(
                 "Voce derrotou o Minotauro Ancient Lord!",
-                WIDTH / 2 - 320,
-                HEIGHT / 3 + 80
+                WIDTH.intdiv(2) - 320,
+                HEIGHT.intdiv(3) + 80
         )
 
         for (int i = 0; i < winOptions.length; i++) {
@@ -282,8 +282,8 @@ class GameRenderer extends Main {
 
             g.drawString(
                     winOptions[i],
-                    WIDTH / 2 - 140,
-                    HEIGHT / 2 + (i * 70)
+                    WIDTH.intdiv(2) - 140,
+                    HEIGHT.intdiv(2) + (i * 70)
             )
         }
     }
@@ -670,7 +670,7 @@ class GameRenderer extends Main {
             }
 
             if (isBossFight && i == 0) {
-                ex = WIDTH / 2 - 170
+                ex = WIDTH.intdiv(2) - 170
                 ey = 180
                 spriteSize = 340
             }
@@ -735,7 +735,7 @@ class GameRenderer extends Main {
             if (!isBossFight && enemyHP[i] > 0) {
 
                 int barWidth = 110
-                int barX = ex + (spriteSize - barWidth) / 2
+                int barX = ex + (spriteSize - barWidth).intdiv(2)
 
                 g.setColor(Color.DARK_GRAY)
                 g.fillRoundRect(barX, ey - 15, barWidth, 10, 5, 5)
@@ -770,7 +770,7 @@ class GameRenderer extends Main {
             int barWidth = 700
             int barHeight = 32
 
-            int barX = (WIDTH / 2) - (barWidth / 2)
+            int barX = WIDTH.intdiv(2) - barWidth.intdiv(2)
             int barY = 30
 
             g.setColor(new Color(20,20,20,230))
@@ -805,7 +805,7 @@ class GameRenderer extends Main {
 
             g.drawString(
                     bossText,
-                    WIDTH / 2 - textWidth / 2,
+                    WIDTH.intdiv(2) - textWidth.intdiv(2),
                     23
             )
         }
@@ -924,7 +924,7 @@ class GameRenderer extends Main {
         g.setColor(Color.LIGHT_GRAY)
         g.drawString(
                 battleMessage + " | M = BAÃƒÅ¡ DE ITENS",
-                WIDTH / 2 - 240,
+                WIDTH.intdiv(2) - 240,
                 hudY + 95
         )
     }

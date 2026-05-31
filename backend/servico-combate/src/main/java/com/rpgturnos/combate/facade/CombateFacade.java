@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
+import com.rpgturnos.combate.dto.AtaqueRequest;
 import com.rpgturnos.combate.dto.HabilidadeRequest;
 import com.rpgturnos.combate.model.Batalha;
 import com.rpgturnos.combate.model.EventoBatalha;
@@ -39,7 +40,11 @@ public class CombateFacade {
     }
 
     public Batalha atacar(Long id) {
-        return batalhaService.atacar(id);
+        return batalhaService.atacar(id, null);
+    }
+
+    public Batalha atacar(Long id, AtaqueRequest request) {
+        return batalhaService.atacar(id, request);
     }
 
     public Batalha defender(Long id) {

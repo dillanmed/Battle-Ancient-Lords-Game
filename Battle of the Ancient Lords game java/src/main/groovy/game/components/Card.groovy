@@ -15,8 +15,8 @@ class Card {
         }
 
         g.color = background
-        g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 8, 8)
+        g.fillRoundRect(bounds.@x, bounds.@y, bounds.@width, bounds.@height, 8, 8)
         g.color = border
-        g.drawRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 8, 8)
+        g.drawRoundRect(bounds.@x, bounds.@y, bounds.@width, bounds.@height, 8, 8)
     }
 }
