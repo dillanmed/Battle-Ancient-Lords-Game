@@ -323,3 +323,7 @@ java.lang.IllegalAccessException: class org.codehaus.groovy.runtime.callsite.Pla
 	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
 	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
 
+Mae 30, 2026 10:52:23 G.M. de.gurkenlabs.litiengine.gui.screens.ScreenManager display
+WARNING: Could not display the screen MainGameScreen because there is no screen with the specified name.
+Mae 30, 2026 10:53:33 G.M. de.gurkenlabs.litiengine.gui.screens.ScreenManager display
+WARNING: Could not display the screen customScreen because there is no screen with the specified name.
