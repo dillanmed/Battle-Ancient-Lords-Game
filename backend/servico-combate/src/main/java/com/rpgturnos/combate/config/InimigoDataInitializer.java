@@ -7,36 +7,102 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Configuration
 public class InimigoDataInitializer {
 
+    private static final Set<String> NOMES_GERENCIADOS_PELO_INITIALIZER = Set.of(
+            "Goblin",
+            "Slime",
+            "Morcego",
+            "Orc",
+            "Lobo",
+            "Esqueleto",
+            "Esqueleto Warrior",
+            "Dark Mage",
+            "Golem",
+            "Gorgon Dark",
+            "Cavaleiro Sombrio",
+            "Bruxa",
+            "Wolfman",
+            "Dragao Menor",
+            "Dragão Menor",
+            "Executor",
+            "Medusa",
+            "Minotauro"
+    );
+
     @Bean
     CommandLineRunner inicializarInimigos(InimigoRepository inimigoRepository) {
         return args -> {
-            if (inimigoRepository.count() > 0) {
-                return;
-            }
+            List<Inimigo> seeds = List.of(
+                    inimigo("Esqueleto", 1, 1, 40, 8, 2, 20, "esqueleto", "COMUM", "Sentinela osseo da primeira arena.", false),
+                    inimigo("Esqueleto Warrior", 1, 1, 48, 10, 4, 24, "esqueleto warrior", "COMUM", "Guerreiro osseo de patrulha.", false),
+                    inimigo("Medusa", 1, 1, 44, 9, 3, 24, "medusa", "COMUM", "Criatura venenosa da arena inicial.", false),
 
-            inimigoRepository.saveAll(List.of(
-                    inimigo("Goblin", 1, 1, 40, 8, 2, false),
-                    inimigo("Slime", 1, 1, 35, 6, 3, false),
-                    inimigo("Morcego", 1, 1, 30, 9, 1, false),
-                    inimigo("Orc", 2, 2, 75, 14, 6, false),
-                    inimigo("Lobo", 2, 2, 60, 16, 4, false),
-                    inimigo("Esqueleto", 2, 2, 70, 13, 7, false),
-                    inimigo("Esqueleto Warrior", 3, 3, 110, 21, 10, false),
-                    inimigo("Dark Mage", 3, 3, 90, 26, 6, false),
-                    inimigo("Golem", 3, 3, 120, 18, 15, false),
-                    inimigo("Gorgon Dark", 4, 4, 150, 30, 14, false),
-                    inimigo("Cavaleiro Sombrio", 4, 4, 160, 28, 18, false),
-                    inimigo("Bruxa", 4, 4, 130, 34, 11, false),
-                    inimigo("Wolfman", 5, 5, 190, 38, 18, false),
-                    inimigo("Dragão Menor", 5, 5, 220, 42, 22, false),
-                    inimigo("Executor", 5, 5, 210, 45, 20, false),
-                    inimigo("Minotauro", 6, 6, 550, 60, 35, true)
-            ));
+                    inimigo("Esqueleto Warrior", 2, 2, 75, 15, 7, 36, "esqueleto warrior", "COMUM", "Guerreiro osseo veterano.", false),
+                    inimigo("Gorgon Dark", 2, 2, 82, 17, 6, 40, "Gorgon dark", "COMUM", "Guardia sombria das ruinas.", false),
+                    inimigo("Medusa", 2, 2, 70, 18, 5, 38, "medusa", "COMUM", "Medusa mais agressiva.", false),
+
+                    inimigo("Gorgon Dark", 3, 3, 120, 24, 10, 60, "Gorgon dark", "COMUM", "Gorgon fortalecida pela escuridao.", false),
+                    inimigo("Medusa", 3, 3, 105, 26, 8, 58, "medusa", "COMUM", "Medusa de elite.", false),
+                    inimigo("Wolfman", 3, 3, 125, 25, 9, 62, "Wolfman", "COMUM", "Cacador feroz da terceira arena.", false),
+
+                    inimigo("Wolfman", 4, 4, 165, 33, 14, 90, "Wolfman", "COMUM", "Wolfman brutal.", false),
+                    inimigo("Gorgon Dark", 4, 4, 155, 34, 13, 88, "Gorgon dark", "COMUM", "Gorgon sombria veterana.", false),
+                    inimigo("Esqueleto Warrior", 4, 4, 170, 31, 17, 86, "esqueleto warrior", "COMUM", "Campeao osseo da quarta arena.", false),
+
+                    inimigo("Wolfman", 5, 5, 220, 42, 20, 130, "Wolfman", "ELITE", "Predador alfa da penultima arena.", false),
+                    inimigo("Minotauro", 5, 5, 260, 45, 24, 145, "Minotauro", "ELITE", "Minotauro guardiao.", false),
+                    inimigo("Medusa", 5, 5, 205, 44, 18, 128, "medusa", "ELITE", "Medusa ancestral.", false),
+
+                    inimigo("Minotauro", 6, 6, 550, 60, 35, 300, "Minotauro", "BOSS", "Lorde final da arena antiga.", true)
+            );
+
+            seeds.forEach(seed -> upsertInimigo(inimigoRepository, seed));
+            desativarInimigosGerenciadosForaDaLista(inimigoRepository, seeds);
         };
+    }
+
+    private void upsertInimigo(InimigoRepository inimigoRepository, Inimigo seed) {
+        Inimigo inimigo = inimigoRepository.findByNomeAndFase(seed.getNome(), seed.getFase())
+                .orElseGet(Inimigo::new);
+
+        inimigo.setNome(seed.getNome());
+        inimigo.setFase(seed.getFase());
+        inimigo.setNivel(seed.getNivel());
+        inimigo.setVidaMaxima(seed.getVidaMaxima());
+        inimigo.setAtaque(seed.getAtaque());
+        inimigo.setDefesa(seed.getDefesa());
+        inimigo.setBoss(seed.getBoss());
+        inimigo.setRecompensaXp(seed.getRecompensaXp());
+        inimigo.setAtivo(true);
+        inimigo.setSpriteKey(seed.getSpriteKey());
+        inimigo.setTipo(seed.getTipo());
+        inimigo.setDescricao(seed.getDescricao());
+
+        inimigoRepository.save(inimigo);
+    }
+
+    private void desativarInimigosGerenciadosForaDaLista(InimigoRepository inimigoRepository, List<Inimigo> seeds) {
+        Set<String> chavesAtivas = seeds.stream()
+                .map(seed -> chave(seed.getNome(), seed.getFase()))
+                .collect(Collectors.toSet());
+
+        inimigoRepository.findAll().stream()
+                .filter(inimigo -> inimigo.getFase() != null && inimigo.getFase() >= 1 && inimigo.getFase() <= 6)
+                .filter(inimigo -> NOMES_GERENCIADOS_PELO_INITIALIZER.contains(inimigo.getNome()))
+                .filter(inimigo -> !chavesAtivas.contains(chave(inimigo.getNome(), inimigo.getFase())))
+                .forEach(inimigo -> {
+                    inimigo.setAtivo(false);
+                    inimigoRepository.save(inimigo);
+                });
+    }
+
+    private static String chave(String nome, Integer fase) {
+        return fase + "::" + nome;
     }
 
     private Inimigo inimigo(String nome,
@@ -45,6 +111,10 @@ public class InimigoDataInitializer {
                             Integer vidaMaxima,
                             Integer ataque,
                             Integer defesa,
+                            Integer recompensaXp,
+                            String spriteKey,
+                            String tipo,
+                            String descricao,
                             Boolean boss) {
         return Inimigo.builder()
                 .nome(nome)
@@ -54,6 +124,11 @@ public class InimigoDataInitializer {
                 .ataque(ataque)
                 .defesa(defesa)
                 .boss(boss)
+                .recompensaXp(recompensaXp)
+                .ativo(true)
+                .spriteKey(spriteKey)
+                .tipo(tipo)
+                .descricao(descricao)
                 .build();
     }
 }
