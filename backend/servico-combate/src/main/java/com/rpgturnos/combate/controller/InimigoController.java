@@ -20,6 +20,18 @@ public class InimigoController {
         this.inimigoService = inimigoService;
     }
 
+    @GetMapping
+    public ResponseEntity<List<Inimigo>> listarInimigos() {
+        return ResponseEntity.ok(inimigoService.listarInimigosAtivos());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Inimigo> buscarPorId(@PathVariable Long id) {
+        return inimigoService.buscarPorId(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/fase/{fase}")
     public ResponseEntity<List<Inimigo>> buscarInimigosDaFase(@PathVariable Integer fase) {
         return ResponseEntity.ok(inimigoService.buscarInimigosDaFase(fase));
