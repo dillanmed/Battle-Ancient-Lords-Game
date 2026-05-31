@@ -5,20 +5,20 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 
 import com.rpgturnos.combate.client.CharacterClient;
 import com.rpgturnos.combate.client.DadosCombatePersonagemResponse;
 import com.rpgturnos.combate.decorator.AtaqueBuffDecorator;
 import com.rpgturnos.combate.decorator.DefesaBuffDecorator;
 import com.rpgturnos.combate.decorator.DefesaDebuffDecorator;
+import com.rpgturnos.combate.dto.AtaqueRequest;
 import com.rpgturnos.combate.dto.HabilidadeRequest;
 import com.rpgturnos.combate.event.BatalhaFinalizadaEvent;
 import com.rpgturnos.combate.exception.BatalhaFinalizadaException;
 import com.rpgturnos.combate.exception.BatalhaNaoEncontradaException;
 import com.rpgturnos.combate.exception.HabilidadeInvalidaException;
 import com.rpgturnos.combate.exception.TurnoInvalidoException;
-import com.rpgturnos.combate.factory.GoblinFactory;
-import com.rpgturnos.combate.factory.InimigoFactory;
 import com.rpgturnos.combate.model.Batalha;
 import com.rpgturnos.combate.model.CombatenteSnapshot;
 import com.rpgturnos.combate.model.ResultadoBatalha;
@@ -38,23 +38,27 @@ public class BatalhaService {
     private final BatalhaProducer batalhaProducer;
     private final EventoBatalhaService eventoBatalhaService;
     private final CharacterClient characterClient;
-    private final InimigoFactory inimigoFactory = new GoblinFactory();
+    private final InimigoService inimigoService;
     private final DamageStrategy damageStrategy = new PhysicalDamageStrategy();
     private final DamageStrategy magicalDamageStrategy = new MagicalDamageStrategy();
 
     public BatalhaService(BatalhaRepository batalhaRepository,
                           BatalhaProducer batalhaProducer,
                           EventoBatalhaService eventoBatalhaService,
-                          CharacterClient characterClient) {
+                          CharacterClient characterClient,
+                          InimigoService inimigoService) {
         this.batalhaRepository = batalhaRepository;
         this.batalhaProducer = batalhaProducer;
         this.eventoBatalhaService = eventoBatalhaService;
         this.characterClient = characterClient;
+        this.inimigoService = inimigoService;
     }
 
     public Batalha criarBatalha(Batalha batalha) {
         batalha.setJogador(prepararJogador(batalha));
-        batalha.setInimigo(inimigoFactory.criar());
+        batalha.setFase(faseOuPadrao(batalha.getFase()));
+        batalha.setInimigos(inimigoService.criarSnapshotsParaFase(batalha.getFase()));
+        batalha.setInimigo(batalha.getInimigos().get(0));
         batalha.setStatus(StatusBatalha.CRIADA);
         batalha.setTurnoAtual(Turno.JOGADOR);
         batalha.setResultado(ResultadoBatalha.PENDENTE);
@@ -91,19 +95,23 @@ public class BatalhaService {
         return batalhaSalva;
     }
 
-    public Batalha atacar(Long id) {
+    public Batalha atacar(Long id, AtaqueRequest request) {
         Batalha batalha = buscarBatalhaOuFalhar(id);
 
         validarBatalhaEmAndamento(batalha);
         validarTurnoJogador(batalha);
 
-        int dano = damageStrategy.calcularDano(batalha.getJogador(), batalha.getInimigo());
-        int novaVidaInimigo = Math.max(batalha.getInimigo().getVidaAtual() - dano, 0);
+        CombatenteSnapshot alvo = buscarInimigoAlvo(batalha, request);
+        batalha.setInimigo(alvo);
 
-        batalha.getInimigo().setVidaAtual(novaVidaInimigo);
-        registrarEvento(batalha, TipoEventoBatalha.ATAQUE, "Jogador causou " + dano + " de dano");
+        int dano = damageStrategy.calcularDano(batalha.getJogador(), alvo);
+        int novaVidaInimigo = Math.max(alvo.getVidaAtual() - dano, 0);
 
-        if (novaVidaInimigo <= 0) {
+        alvo.setVidaAtual(novaVidaInimigo);
+        registrarEvento(batalha, TipoEventoBatalha.ATAQUE,
+                "Jogador causou " + dano + " de dano em " + alvo.getNome());
+
+        if (todosInimigosDerrotados(batalha)) {
             finalizarComVitoria(batalha);
         } else {
             passarTurnoParaInimigo(batalha);
@@ -137,7 +145,7 @@ public class BatalhaService {
         batalha.getJogador().setManaAtual(batalha.getJogador().getManaAtual() - request.getCustoMana());
         aplicarHabilidade(batalha, request);
 
-        if (batalha.getInimigo().getVidaAtual() <= 0) {
+        if (todosInimigosDerrotados(batalha)) {
             finalizarComVitoria(batalha);
         } else {
             passarTurnoParaInimigo(batalha);
@@ -193,11 +201,15 @@ public class BatalhaService {
     }
 
     private void executarTurnoInimigo(Batalha batalha) {
-        int dano = damageStrategy.calcularDano(batalha.getInimigo(), batalha.getJogador());
+        CombatenteSnapshot atacante = primeiroInimigoVivo(batalha);
+        batalha.setInimigo(atacante);
+
+        int dano = damageStrategy.calcularDano(atacante, batalha.getJogador());
         int novaVidaJogador = Math.max(batalha.getJogador().getVidaAtual() - dano, 0);
 
         batalha.getJogador().setVidaAtual(novaVidaJogador);
-        registrarEvento(batalha, TipoEventoBatalha.ATAQUE, "Inimigo causou " + dano + " de dano");
+        registrarEvento(batalha, TipoEventoBatalha.ATAQUE,
+                atacante.getNome() + " causou " + dano + " de dano");
 
         if (novaVidaJogador <= 0) {
             finalizarComDerrota(batalha);
@@ -207,11 +219,15 @@ public class BatalhaService {
     }
 
     private void executarTurnoInimigoComDefesa(Batalha batalha) {
-        int dano = Math.max(damageStrategy.calcularDano(batalha.getInimigo(), batalha.getJogador()) / 2, 1);
+        CombatenteSnapshot atacante = primeiroInimigoVivo(batalha);
+        batalha.setInimigo(atacante);
+
+        int dano = Math.max(damageStrategy.calcularDano(atacante, batalha.getJogador()) / 2, 1);
         int novaVidaJogador = Math.max(batalha.getJogador().getVidaAtual() - dano, 0);
 
         batalha.getJogador().setVidaAtual(novaVidaJogador);
-        registrarEvento(batalha, TipoEventoBatalha.ATAQUE, "Inimigo causou " + dano + " de dano contra defesa");
+        registrarEvento(batalha, TipoEventoBatalha.ATAQUE,
+                atacante.getNome() + " causou " + dano + " de dano contra defesa");
 
         if (novaVidaJogador <= 0) {
             finalizarComDerrota(batalha);
@@ -278,6 +294,8 @@ public class BatalhaService {
                 registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
                         request.getNome() + " reduziu defesa do inimigo em " + reducao);
             }
+            case "CURA" -> aplicarCuraDeHabilidade(batalha, request);
+            case "AREA", "DANO_AREA" -> aplicarDanoEmArea(batalha, request);
             case "MAGICA", "DANO_MAGICO" -> aplicarDanoDeHabilidade(batalha, request, magicalDamageStrategy);
             case "DANO", "FISICA", "ATAQUE" -> aplicarDanoDeHabilidade(batalha, request, damageStrategy);
             default -> throw new HabilidadeInvalidaException("Tipo de habilidade invalido: " + request.getTipo());
@@ -285,17 +303,91 @@ public class BatalhaService {
     }
 
     private void aplicarDanoDeHabilidade(Batalha batalha, HabilidadeRequest request, DamageStrategy strategy) {
-        int danoBase = strategy.calcularDano(batalha.getJogador(), batalha.getInimigo());
-        int dano = Math.max(danoBase + valorOuPadrao(request.getDano(), 0), 1);
-        int novaVidaInimigo = Math.max(batalha.getInimigo().getVidaAtual() - dano, 0);
+        CombatenteSnapshot alvo = buscarInimigoAlvo(batalha, request);
+        batalha.setInimigo(alvo);
 
-        batalha.getInimigo().setVidaAtual(novaVidaInimigo);
+        int danoBase = strategy.calcularDano(batalha.getJogador(), alvo);
+        int dano = Math.max(danoBase + valorOuPadrao(request.getDano(), 0), 1);
+        int novaVidaInimigo = Math.max(alvo.getVidaAtual() - dano, 0);
+
+        alvo.setVidaAtual(novaVidaInimigo);
         registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
                 request.getNome() + " causou " + dano + " de dano");
     }
 
+    private void aplicarDanoEmArea(Batalha batalha, HabilidadeRequest request) {
+        for (CombatenteSnapshot inimigo : batalha.getInimigos()) {
+            if (!estaVivo(inimigo)) {
+                continue;
+            }
+
+            int dano = Math.max(damageStrategy.calcularDano(batalha.getJogador(), inimigo)
+                    + valorOuPadrao(request.getDano(), 0), 1);
+            inimigo.setVidaAtual(Math.max(inimigo.getVidaAtual() - dano, 0));
+        }
+
+        registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
+                request.getNome() + " atingiu todos os inimigos");
+    }
+
+    private void aplicarCuraDeHabilidade(Batalha batalha, HabilidadeRequest request) {
+        int cura = valorOuPadrao(request.getDano(), 20);
+        int novaVidaJogador = Math.min(batalha.getJogador().getVidaAtual() + cura,
+                batalha.getJogador().getVidaMaxima());
+
+        batalha.getJogador().setVidaAtual(novaVidaJogador);
+        registrarEvento(batalha, TipoEventoBatalha.HABILIDADE,
+                request.getNome() + " recuperou " + cura + " de vida");
+    }
+
     private int valorOuPadrao(Integer valor, int padrao) {
         return valor == null ? padrao : valor;
+    }
+
+    private CombatenteSnapshot buscarInimigoAlvo(Batalha batalha, AtaqueRequest request) {
+        Long inimigoId = request == null ? null : request.getInimigoId();
+        return buscarInimigoAlvoPorId(batalha, inimigoId);
+    }
+
+    private CombatenteSnapshot buscarInimigoAlvo(Batalha batalha, HabilidadeRequest request) {
+        Long inimigoId = request == null ? null : request.getInimigoId();
+        return buscarInimigoAlvoPorId(batalha, inimigoId);
+    }
+
+    private CombatenteSnapshot buscarInimigoAlvoPorId(Batalha batalha, Long inimigoId) {
+        if (inimigoId != null) {
+            return batalha.getInimigos()
+                    .stream()
+                    .filter(inimigo -> inimigoId.equals(inimigo.getId())
+                            || inimigoId.equals(inimigo.getReferenciaOriginalId()))
+                    .findFirst()
+                    .filter(this::estaVivo)
+                    .orElseThrow(() -> new TurnoInvalidoException("Inimigo invalido ou derrotado"));
+        }
+
+        return primeiroInimigoVivo(batalha);
+    }
+
+    private CombatenteSnapshot primeiroInimigoVivo(Batalha batalha) {
+        return batalha.getInimigos()
+                .stream()
+                .filter(this::estaVivo)
+                .findFirst()
+                .orElseThrow(() -> new TurnoInvalidoException("Nao ha inimigos vivos"));
+    }
+
+    private boolean todosInimigosDerrotados(Batalha batalha) {
+        return batalha.getInimigos()
+                .stream()
+                .noneMatch(this::estaVivo);
+    }
+
+    private boolean estaVivo(CombatenteSnapshot inimigo) {
+        return inimigo != null && inimigo.getVidaAtual() != null && inimigo.getVidaAtual() > 0;
+    }
+
+    private Integer faseOuPadrao(Integer fase) {
+        return fase == null ? 1 : fase;
     }
 
     private CombatenteSnapshot prepararJogador(Batalha batalha) {
@@ -303,19 +395,38 @@ public class BatalhaService {
             return batalha.getJogador();
         }
 
-        DadosCombatePersonagemResponse personagem = characterClient.buscarDadosCombate(batalha.getPersonagemId());
+        try {
+            DadosCombatePersonagemResponse personagem = characterClient.buscarDadosCombate(batalha.getPersonagemId());
 
+            return CombatenteSnapshot.builder()
+                    .referenciaOriginalId(personagem.getId())
+                    .nome(personagem.getNome())
+                    .tipo("JOGADOR")
+                    .vidaMaxima(personagem.getVidaMaxima())
+                    .vidaAtual(personagem.getVidaMaxima())
+                    .manaMaxima(personagem.getManaMaxima())
+                    .manaAtual(personagem.getManaMaxima())
+                    .ataque(personagem.getAtaque())
+                    .defesa(personagem.getDefesa())
+                    .nivel(personagem.getNivel())
+                    .build();
+        } catch (RestClientException exception) {
+            return criarJogadorPadrao(batalha.getPersonagemId());
+        }
+    }
+
+    private CombatenteSnapshot criarJogadorPadrao(Long personagemId) {
         return CombatenteSnapshot.builder()
-                .referenciaOriginalId(personagem.getId())
-                .nome(personagem.getNome())
+                .referenciaOriginalId(personagemId)
+                .nome("Aventureiro")
                 .tipo("JOGADOR")
-                .vidaMaxima(personagem.getVidaMaxima())
-                .vidaAtual(personagem.getVidaMaxima())
-                .manaMaxima(personagem.getManaMaxima())
-                .manaAtual(personagem.getManaMaxima())
-                .ataque(personagem.getAtaque())
-                .defesa(personagem.getDefesa())
-                .nivel(personagem.getNivel())
+                .vidaMaxima(120)
+                .vidaAtual(120)
+                .manaMaxima(40)
+                .manaAtual(40)
+                .ataque(30)
+                .defesa(12)
+                .nivel(1)
                 .build();
     }
 

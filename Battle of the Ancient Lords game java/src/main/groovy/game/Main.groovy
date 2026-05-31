@@ -124,6 +124,7 @@ class Main {
     static int playerXP = 0
     static int maxXP = 100
     static int damageBonus = 0
+    static Long currentPersonagemId = 1L
 
     static int playerLives = 5
     static boolean isRespawning = false
@@ -134,8 +135,11 @@ class Main {
     // ENEMIES
     // =========================================
     static int[] enemyHP = [40, 40, 40]
+    static int[] enemyMaxHP = [40, 40, 40]
+    static Long[] enemyIds = [null, null, null]
     static int maxEnemyHP = 40
     static String[] enemyNames = ["Inimigo 1", "Inimigo 2", "Inimigo 3"]
+    static Long currentBattleId = null
 
     // =========================================
     // TURN & INTRO SYSTEM
@@ -537,6 +541,9 @@ class Main {
 
     static void applyFrontendCharacter(Personagem personagem) {
         currentClass = personagem.classe ?: currentClass
+        if (personagem.id?.isLong()) {
+            currentPersonagemId = personagem.id as Long
+        }
         playerLives = 5
         isRespawning = false
         playerLevel = personagem.nivel
@@ -647,6 +654,7 @@ class Main {
         println "\n--- GERANDO INIMIGOS PARA A FASE ${currentPhase} ---"
 
         String baseEnemies = "src/main/resources/sprites/Sprite inimigos/"
+        Map batalhaBackend = carregarBatalhaDaFaseNoBackend()
 
         // =========================================
         // FASE 6 = BOSS FINAL
@@ -655,18 +663,24 @@ class Main {
 
             isBossFight = true
 
-            bossName = "MINOTAURO ANCESTRAL"
+            bossName = nomeInimigoBackend(batalhaBackend, 0, "MINOTAURO ANCESTRAL")
 
-            bossMaxHP = 850
-            bossHP = bossMaxHP
+            bossMaxHP = vidaMaximaInimigoBackend(batalhaBackend, 0, 850)
+            bossHP = vidaAtualInimigoBackend(batalhaBackend, 0, bossMaxHP)
 
             maxEnemyHP = bossMaxHP
+            enemyMaxHP[0] = bossMaxHP
+            enemyIds[0] = idInimigoBackend(batalhaBackend, 0)
 
             enemyNames[0] = bossName
             enemyHP[0] = bossHP
 
             enemyHP[1] = 0
             enemyHP[2] = 0
+            enemyMaxHP[1] = 0
+            enemyMaxHP[2] = 0
+            enemyIds[1] = null
+            enemyIds[2] = null
 
             String path = baseEnemies + "Minotauro/"
 
@@ -687,40 +701,19 @@ class Main {
         // =========================================
 
         isBossFight = false
-
-        String[] disponiveis = [
-                "esqueleto",
-                "esqueleto warrior",
-                "Gorgon Dark",
-                "Medusa",
-                "Wolfman"
-        ]
-
-        String[] nomesExibicao = [
-                "Esqueleto",
-                "Esqueleto Warrior",
-                "Gorgon Dark",
-                "Medusa",
-                "Wolfman"
-        ]
-
-        Random rand = new Random()
-
-        maxEnemyHP = 35 + (currentPhase * 15)
+        maxEnemyHP = 1
 
         for (int i = 0; i < 3; i++) {
 
-            int indiceSorteado = rand.nextInt(disponiveis.length)
-
-            String pastaSorteada = disponiveis[indiceSorteado]
-
-            enemyNames[i] = nomesExibicao[indiceSorteado] + " Nivel " + currentPhase
-
-            enemyHP[i] = maxEnemyHP
+            enemyNames[i] = nomeInimigoBackend(batalhaBackend, i, "Inimigo ${i + 1}")
+            enemyHP[i] = vidaAtualInimigoBackend(batalhaBackend, i, 0)
+            enemyMaxHP[i] = vidaMaximaInimigoBackend(batalhaBackend, i, enemyHP[i])
+            enemyIds[i] = idInimigoBackend(batalhaBackend, i)
+            maxEnemyHP = Math.max(maxEnemyHP, enemyMaxHP[i])
 
             enemyVisualState[i] = STATE_IDLE
 
-            String path = baseEnemies + pastaSorteada + "/"
+            String path = baseEnemies + pastaSpriteInimigo(enemyNames[i]) + "/"
 
             enemyIdles[i]   = loadFramesFromFolder(path + "idle")
             enemyWalks[i]   = loadFramesFromFolder(path + "walk")
@@ -730,6 +723,94 @@ class Main {
         }
 
         selectedEnemy = 0
+    }
+
+    static Map carregarBatalhaDaFaseNoBackend() {
+        try {
+            Map batalha = ServiceRegistry.combateService.criarEIniciarBatalha(currentPersonagemId ?: 1L, currentPhase)
+            currentBattleId = batalha.id as Long
+            aplicarEstadoBatalhaBackend(batalha)
+            return batalha
+        } catch (Exception e) {
+            currentBattleId = null
+            battleMessage = "Falha ao iniciar batalha no servidor de combate."
+            println "Erro ao iniciar batalha no servico-combate: ${e.message}"
+            return [inimigos: []]
+        }
+    }
+
+    static void aplicarEstadoBatalhaBackend(Map batalha) {
+        if (!batalha) return
+
+        if (batalha.jogadorVidaAtual != null) {
+            playerHP = (batalha.jogadorVidaAtual as Number).intValue()
+        }
+        if (batalha.jogadorManaAtual != null) {
+            playerMana = (batalha.jogadorManaAtual as Number).intValue()
+        }
+
+        List inimigosBackend = (batalha.inimigos ?: []) as List
+        for (int i = 0; i < 3; i++) {
+            Map inimigo = i < inimigosBackend.size() ? inimigosBackend[i] as Map : null
+            if (inimigo != null) {
+                enemyIds[i] = inimigo.id == null ? null : inimigo.id as Long
+                enemyNames[i] = inimigo.nome ?: enemyNames[i]
+                enemyHP[i] = valorInteiro(inimigo.vidaAtual, enemyHP[i])
+                enemyMaxHP[i] = valorInteiro(inimigo.vidaMaxima, enemyMaxHP[i])
+                if (enemyHP[i] <= 0 || inimigo.vivo == false) {
+                    enemyHP[i] = 0
+                    enemyVisualState[i] = STATE_DEAD
+                }
+            } else {
+                enemyIds[i] = null
+                enemyHP[i] = 0
+                enemyMaxHP[i] = 0
+                enemyVisualState[i] = STATE_DEAD
+            }
+        }
+
+        maxEnemyHP = Math.max(1, enemyMaxHP.max() as int)
+    }
+
+    static String nomeInimigoBackend(Map batalha, int index, String fallback) {
+        List inimigosBackend = (batalha?.inimigos ?: []) as List
+        if (index >= inimigosBackend.size()) return fallback
+        Map inimigo = inimigosBackend[index] as Map
+        inimigo.nome ?: fallback
+    }
+
+    static int vidaAtualInimigoBackend(Map batalha, int index, int fallback) {
+        List inimigosBackend = (batalha?.inimigos ?: []) as List
+        if (index >= inimigosBackend.size()) return fallback
+        valorInteiro((inimigosBackend[index] as Map).vidaAtual, fallback)
+    }
+
+    static int vidaMaximaInimigoBackend(Map batalha, int index, int fallback) {
+        List inimigosBackend = (batalha?.inimigos ?: []) as List
+        if (index >= inimigosBackend.size()) return fallback
+        valorInteiro((inimigosBackend[index] as Map).vidaMaxima, fallback)
+    }
+
+    static Long idInimigoBackend(Map batalha, int index) {
+        List inimigosBackend = (batalha?.inimigos ?: []) as List
+        if (index >= inimigosBackend.size()) return null
+        def id = (inimigosBackend[index] as Map).id
+        id == null ? null : id as Long
+    }
+
+    static int valorInteiro(def valor, int fallback) {
+        valor == null ? fallback : (valor as Number).intValue()
+    }
+
+    static String pastaSpriteInimigo(String nome) {
+        String normalizado = (nome ?: "").toLowerCase()
+        if (normalizado.contains("minotauro")) return "Minotauro"
+        if (normalizado.contains("wolf")) return "Wolfman"
+        if (normalizado.contains("gorgon")) return "Gorgon dark"
+        if (normalizado.contains("medusa")) return "medusa"
+        if (normalizado.contains("warrior")) return "esqueleto warrior"
+        if (normalizado.contains("esqueleto")) return "esqueleto"
+        "esqueleto"
     }
 
     static boolean allEnemiesDead() {

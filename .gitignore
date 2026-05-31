@@ -1,9 +1,46 @@
+# Build outputs
 build/
+bin/
+target/
+out/
+*.class
 *.jar
+*.war
 *.zip
 *.tar
+!**/gradle/wrapper/gradle-wrapper.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+
+# Maven
+.mvn/timing.properties
+
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+
+# Logs and crash reports
+logs/
+*.log
+crash.txt
+hs_err_pid*
+replay_pid*
+
+# Local config/secrets
+config.properties
+*.local
+*.env
+*.env.*
 
 # Local database files
 backend/servico-combate/data/
 *.mv.db
 *.trace.db
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

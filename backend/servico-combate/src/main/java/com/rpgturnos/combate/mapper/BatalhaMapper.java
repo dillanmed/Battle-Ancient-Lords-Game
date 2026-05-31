@@ -3,9 +3,12 @@ package com.rpgturnos.combate.mapper;
 import com.rpgturnos.combate.dto.BatalhaResponse;
 import com.rpgturnos.combate.dto.CriarBatalhaRequest;
 import com.rpgturnos.combate.dto.EventoBatalhaResponse;
+import com.rpgturnos.combate.dto.InimigoBatalhaResponse;
 import com.rpgturnos.combate.model.Batalha;
 import com.rpgturnos.combate.model.CombatenteSnapshot;
 import com.rpgturnos.combate.model.EventoBatalha;
+
+import java.util.List;
 
 public final class BatalhaMapper {
 
@@ -16,6 +19,7 @@ public final class BatalhaMapper {
         return Batalha.builder()
                 .usuarioId(request.getUsuarioId())
                 .personagemId(request.getPersonagemId())
+                .fase(request.getFase())
                 .build();
     }
 
@@ -31,6 +35,7 @@ public final class BatalhaMapper {
                 .jogadorManaAtual(manaAtual(batalha.getJogador()))
                 .inimigoNome(nome(batalha.getInimigo()))
                 .inimigoVidaAtual(vidaAtual(batalha.getInimigo()))
+                .inimigos(toInimigosResponse(batalha.getInimigos()))
                 .build();
     }
 
@@ -55,5 +60,25 @@ public final class BatalhaMapper {
 
     private static Integer manaAtual(CombatenteSnapshot combatente) {
         return combatente == null ? null : combatente.getManaAtual();
+    }
+
+    private static List<InimigoBatalhaResponse> toInimigosResponse(List<CombatenteSnapshot> inimigos) {
+        if (inimigos == null) {
+            return List.of();
+        }
+
+        return inimigos.stream()
+                .map(BatalhaMapper::toInimigoResponse)
+                .toList();
+    }
+
+    private static InimigoBatalhaResponse toInimigoResponse(CombatenteSnapshot inimigo) {
+        return InimigoBatalhaResponse.builder()
+                .id(inimigo.getId())
+                .nome(inimigo.getNome())
+                .vidaAtual(inimigo.getVidaAtual())
+                .vidaMaxima(inimigo.getVidaMaxima())
+                .vivo(inimigo.getVidaAtual() != null && inimigo.getVidaAtual() > 0)
+                .build();
     }
 }

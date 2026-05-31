@@ -11,4 +11,5 @@ public class HabilidadeRequest {
     private String tipo;
     private Integer dano;
     private Integer custoMana;
+    private Long inimigoId;
 }

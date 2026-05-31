@@ -1,31 +1,72 @@
-Sat May 30 12:13:46 BRT 2026 Main Update Loop threw an exception:
-groovy.lang.MissingMethodException: No signature of method: java.lang.String.indexOf() is applicable for argument types: (Character) values: [@]
-Possible solutions: indexOf(int), indexOf(java.lang.String), indexOf(int, int), indexOf(java.lang.String, int), indexOf(int, int, int), indexOf(java.lang.String, int, int)
-	at org.codehaus.groovy.runtime.ScriptBytecodeAdapter.unwrap(ScriptBytecodeAdapter.java:70)
-	at org.codehaus.groovy.runtime.callsite.PojoMetaClassSite.call(PojoMetaClassSite.java:46)
+Sun May 31 09:44:20 BRT 2026 AWT-EventQueue-0 threw an exception:
+java.lang.IllegalAccessException: class org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite cannot access a member of class java.lang.Object (in module java.base) with modifiers "protected native"
+	at java.base/jdk.internal.reflect.Reflection.newIllegalAccessException(Reflection.java:394)
+	at java.base/java.lang.reflect.AccessibleObject.checkAccess(AccessibleObject.java:714)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:571)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:48)
+	at org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite$PojoCachedMethodSiteNoUnwrapNoCoerce.invoke(PojoMetaMethodSite.java:209)
+	at org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite.call(PojoMetaMethodSite.java:51)
 	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(CallSiteArray.java:47)
 	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:125)
-	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:139)
-	at game.auth.EsqueceuSenha$_setupKeyboardInput_closure1.doCall(EsqueceuSenha.groovy:99)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:130)
+	at game.combate.BattleController.processarHabilidadeBackend(BattleController.groovy:77)
+	at game.combate.BattleController$processarHabilidadeBackend$0.callStatic(Unknown Source)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallStatic(CallSiteArray.java:55)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callStatic(AbstractCallSite.java:217)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callStatic(AbstractCallSite.java:240)
+	at game.combate.BattleController.executeClassSpecialSkill(BattleController.groovy:44)
+	at game.combate.BattleController$executeClassSpecialSkill.call(Unknown Source)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(CallSiteArray.java:47)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:125)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:130)
+	at game.Main.executeClassSpecialSkill(Main.groovy:455)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:107)
 	at groovy.lang.MetaMethod.doMethodInvoke(MetaMethod.java:323)
-	at org.codehaus.groovy.runtime.metaclass.ClosureMetaClass.invokeMethod(ClosureMetaClass.java:274)
-	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1030)
-	at groovy.lang.Closure.call(Closure.java:427)
-	at org.codehaus.groovy.runtime.ConvertedClosure.invokeCustom(ConvertedClosure.java:50)
-	at org.codehaus.groovy.runtime.ConversionHandler.invoke(ConversionHandler.java:112)
-	at jdk.proxy2/jdk.proxy2.$Proxy13.keyTyped(Unknown Source)
-	at de.gurkenlabs.litiengine.input.Keyboard.lambda$executeTypedKeys$12(Keyboard.java:279)
-	at java.base/java.util.concurrent.ConcurrentHashMap$KeySetView.forEach(ConcurrentHashMap.java:4709)
-	at de.gurkenlabs.litiengine.input.Keyboard.lambda$executeTypedKeys$14(Keyboard.java:279)
-	at java.base/java.util.concurrent.ConcurrentHashMap$KeySetView.forEach(ConcurrentHashMap.java:4709)
-	at de.gurkenlabs.litiengine.input.Keyboard.executeTypedKeys(Keyboard.java:273)
-	at de.gurkenlabs.litiengine.input.Keyboard.update(Keyboard.java:197)
-	at de.gurkenlabs.litiengine.GameLoop.updateInvariableEngineComponents(GameLoop.java:128)
-	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:84)
-	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
+	at groovy.lang.MetaClassImpl.invokeStaticMethod(MetaClassImpl.java:1515)
+	at org.codehaus.groovy.runtime.InvokerHelper.invokeMethod(InvokerHelper.java:1010)
+	at org.codehaus.groovy.runtime.ScriptBytecodeAdapter.invokeMethodN(ScriptBytecodeAdapter.java:180)
+	at game.Main$1.methodMissing(Main.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:107)
+	at groovy.lang.MetaClassImpl.invokeMissingMethod(MetaClassImpl.java:948)
+	at groovy.lang.MetaClassImpl.invokePropertyOrMissing(MetaClassImpl.java:1333)
+	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1256)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaClassSite.callCurrent(PogoMetaClassSite.java:61)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallCurrent(CallSiteArray.java:51)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:171)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:176)
+	at game.Main$1.keyPressed(Main.groovy:444)
+	at java.desktop/java.awt.Component.processKeyEvent(Component.java:6579)
+	at java.desktop/java.awt.Component.processEvent(Component.java:6398)
+	at java.desktop/java.awt.Component.dispatchEventImpl(Component.java:4996)
+	at java.desktop/java.awt.Component.dispatchEvent(Component.java:4828)
+	at java.desktop/java.awt.KeyboardFocusManager.redispatchEvent(KeyboardFocusManager.java:1952)
+	at java.desktop/java.awt.DefaultKeyboardFocusManager.dispatchKeyEvent(DefaultKeyboardFocusManager.java:883)
+	at java.desktop/java.awt.DefaultKeyboardFocusManager.preDispatchKeyEvent(DefaultKeyboardFocusManager.java:1146)
+	at java.desktop/java.awt.DefaultKeyboardFocusManager.typeAheadAssertions(DefaultKeyboardFocusManager.java:1020)
+	at java.desktop/java.awt.DefaultKeyboardFocusManager.dispatchEvent(DefaultKeyboardFocusManager.java:848)
+	at java.desktop/java.awt.Component.dispatchEventImpl(Component.java:4877)
+	at java.desktop/java.awt.Component.dispatchEvent(Component.java:4828)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:775)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:720)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:714)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:98)
+	at java.desktop/java.awt.EventQueue$5.run(EventQueue.java:747)
+	at java.desktop/java.awt.EventQueue$5.run(EventQueue.java:745)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:744)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:203)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:124)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:113)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:109)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
 
 ====Runtime Information====
 Operating System: Windows 10
@@ -34,11 +75,11 @@ Operating System: Windows 10
 Memory:
 	Max heap size: 4,9 GiB
 	Current heap size: 320,0 MiB
-	Heap used: 199,4 MiB
-	Free heap: 120,6 MiB
+	Heap used: 136,5 MiB
+	Free heap: 183,5 MiB
 Java Version: Java(TM) SE Runtime Environment 21.0.11+9-LTS-211 
 	Vendor: Oracle Corporation
-Uptime: PT11M8.864S
+Uptime: PT40.556S
 Screens: 1
 	Screen 0: 1920x1080@60hz
 

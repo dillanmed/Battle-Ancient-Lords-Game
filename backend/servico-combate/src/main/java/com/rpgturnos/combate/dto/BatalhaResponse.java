@@ -6,6 +6,8 @@ import com.rpgturnos.combate.model.Turno;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class BatalhaResponse {
@@ -22,4 +24,5 @@ public class BatalhaResponse {
 
     private String inimigoNome;
     private Integer inimigoVidaAtual;
+    private List<InimigoBatalhaResponse> inimigos;
 }
