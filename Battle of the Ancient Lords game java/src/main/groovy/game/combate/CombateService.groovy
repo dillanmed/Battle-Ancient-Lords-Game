@@ -26,6 +26,10 @@ class CombateService {
         apiClient.post("/batalhas/${batalhaId}/iniciar", [:])
     }
 
+    Map buscarBatalha(Number batalhaId) {
+        apiClient.get("/batalhas/${batalhaId}")
+    }
+
     Map atacar(Number batalhaId, Number inimigoId) {
         apiClient.post("/batalhas/${batalhaId}/atacar", [
                 inimigoId: inimigoId

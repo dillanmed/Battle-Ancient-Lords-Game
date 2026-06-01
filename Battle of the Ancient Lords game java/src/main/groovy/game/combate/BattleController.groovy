@@ -17,17 +17,18 @@ class BattleController extends Main {
 
     static void executeClassSpecialSkill() {
         if (battleActionInProgress) return
+        if (bloqueiaInputCombate()) return
         if (currentBattleId == null) {
-            battleMessage = "Batalha nao iniciada no servidor de combate."
+            registrarMensagemCombate("Batalha nao iniciada no servidor de combate.")
             return
         }
         if (enemyHP[selectedEnemy] <= 0 || enemyIds[selectedEnemy] == null) {
-            battleMessage = "Selecione um alvo vivo para a habilidade especial."
+            registrarMensagemCombate("Selecione um alvo vivo para a habilidade especial.")
             return
         }
         int custoMana = estimarCustoEspecial()
         if (playerMana < custoMana) {
-            battleMessage = "Mana insuficiente para habilidade especial! Precisa de ${custoMana} MP."
+            feedbackSemMana(custoMana)
             return
         }
 
@@ -56,7 +57,7 @@ class BattleController extends Main {
         playerTurn = false
 
         if (alvoIndex >= 0 && enemyHP[alvoIndex] > 0) {
-            battleMessage = "ESPECIAL! Atacando ${enemyNames[alvoIndex]}..."
+            registrarMensagemCombate("ESPECIAL! Atacando ${enemyNames[alvoIndex]}...")
         }
 
         Thread.start {
@@ -64,16 +65,15 @@ class BattleController extends Main {
             try {
                 batalha = ServiceRegistry.combateService.usarHabilidade(currentBattleId, habilidade)
             } catch (Exception e) {
-                battleMessage = "Erro ao usar habilidade no servidor de combate."
                 println "Erro ao usar habilidade no servico-combate: ${e.message}"
                 battleActionInProgress = false
-                playerTurn = true
+                pausarCombatePorErro("habilidade")
                 return
             }
 
             aplicarInimigosBatalhaBackend(batalha)
             aplicarJogadorBatalhaBackend(batalha)
-            battleMessage = mensagemEspecial(alvoIndex, vidasAntes, batalha, mensagemSucesso)
+            registrarMensagemCombate(mensagemEspecial(alvoIndex, vidasAntes, batalha, mensagemSucesso))
 
             for (int i = 0; i < enemyHP.length; i++) {
                 if (vidasAntes[i] > enemyHP[i]) {
@@ -82,7 +82,7 @@ class BattleController extends Main {
                         enemyVisualState[i] = STATE_DEAD
                         enemyStateTime[i] = System.currentTimeMillis()
                         grantKillRewards(i)
-                        battleMessage = "${enemyNames[i]} derrotado!"
+                        registrarMensagemCombate("${enemyNames[i]} derrotado!")
                     } else {
                         enemyVisualState[i] = STATE_HURT
                         enemyStateTime[i] = System.currentTimeMillis()
@@ -99,7 +99,7 @@ class BattleController extends Main {
                     playerStateTime = System.currentTimeMillis()
                     BufferedImage currentPlayerFrame = getAnimationFrame(playerHurt, 100, false, playerStateTime, STATE_IDLE)
                     playerCachedHurtFrame = generateTintedSilhouette(currentPlayerFrame)
-                    battleMessage = "Voce recebeu ${danoJogador} de dano!"
+                    registrarMensagemCombate("Voce recebeu ${danoJogador} de dano!")
                 }
             }
 
@@ -110,9 +110,10 @@ class BattleController extends Main {
 
     static void attackEnemy(int enemyIndex) {
         if (battleActionInProgress) return
+        if (bloqueiaInputCombate()) return
         if (enemyHP[enemyIndex] <= 0) return
         if (currentBattleId == null || enemyIds[enemyIndex] == null) {
-            battleMessage = "Batalha nao iniciada no servidor de combate."
+            registrarMensagemCombate("Batalha nao iniciada no servidor de combate.")
             return
         }
 
@@ -123,17 +124,16 @@ class BattleController extends Main {
 
         int vidaInimigoAntes = enemyHP[enemyIndex]
         int vidaJogadorAntes = playerHP
-        battleMessage = "Atacando ${enemyNames[enemyIndex]}..."
+        registrarMensagemCombate("Atacando ${enemyNames[enemyIndex]}...")
 
         Thread.start {
             Map batalha
             try {
                 batalha = ServiceRegistry.combateService.atacar(currentBattleId, enemyIds[enemyIndex])
             } catch (Exception e) {
-                battleMessage = "Erro ao atacar no servidor de combate."
                 println "Erro ao atacar no servico-combate: ${e.message}"
                 battleActionInProgress = false
-                playerTurn = true
+                pausarCombatePorErro("ataque")
                 return
             }
 
@@ -149,13 +149,13 @@ class BattleController extends Main {
                 enemyStateTime[enemyIndex] = System.currentTimeMillis()
                 enemyCachedHurtFrames[enemyIndex] = null
                 grantKillRewards(enemyIndex)
-                battleMessage = "${enemyNames[enemyIndex]} derrotado!"
+                registrarMensagemCombate("${enemyNames[enemyIndex]} derrotado!")
             } else {
                 enemyVisualState[enemyIndex] = STATE_HURT
                 enemyStateTime[enemyIndex] = System.currentTimeMillis()
                 BufferedImage currentEnemyFrame = getEnemyAnimationFrame(enemyIndex, enemyHurts[enemyIndex], 100, false, enemyStateTime[enemyIndex])
                 enemyCachedHurtFrames[enemyIndex] = generateTintedSilhouette(currentEnemyFrame)
-                battleMessage = mensagemDanoJogador(enemyIndex, damage, false)
+                registrarMensagemCombate(mensagemDanoJogador(enemyIndex, damage, false))
             }
 
             Thread.sleep(COUNTER_ATTACK_DELAY_MS)
@@ -168,7 +168,7 @@ class BattleController extends Main {
                     playerStateTime = System.currentTimeMillis()
                     BufferedImage currentPlayerFrame = getAnimationFrame(playerHurt, 100, false, playerStateTime, STATE_IDLE)
                     playerCachedHurtFrame = generateTintedSilhouette(currentPlayerFrame)
-                    battleMessage = "Voce recebeu ${danoJogador} de dano!"
+                    registrarMensagemCombate("Voce recebeu ${danoJogador} de dano!")
                 }
             }
 
@@ -280,6 +280,7 @@ class BattleController extends Main {
         String resultado = batalha?.resultado?.toString()
         if (resultado == "VITORIA") {
             battleActionInProgress = false
+            registrarMensagemCombate("Vitoria! Area limpa.")
             grantBattleVictoryRewards()
             if (currentPhase < 6) {
                 startPhaseTransition()
@@ -292,7 +293,7 @@ class BattleController extends Main {
             battleActionInProgress = false
             playerVisualState = STATE_DEAD
             playerStateTime = System.currentTimeMillis()
-            battleMessage = "Fim de Jogo..."
+            registrarMensagemCombate("Fim de Jogo...")
             Thread.sleep(400)
             stopAllMusic()
             selectedGameOverOpt = 0
@@ -371,7 +372,7 @@ class BattleController extends Main {
         enemyStateTime[attacker] = System.currentTimeMillis()
 
         if (random.nextInt(100) < 15) {
-            battleMessage = "O ${enemyNames[attacker]} TENTOU atacar, mas ERROU o golpe!"
+            registrarMensagemCombate("O ${enemyNames[attacker]} TENTOU atacar, mas ERROU o golpe!")
             Thread.start {
                 Thread.sleep(300)
                 if (playerHP > 0) playerTurn = true
@@ -400,7 +401,7 @@ class BattleController extends Main {
             playerLives--
 
             if (playerLives > 0) {
-                battleMessage = "Voce morreu! Consumindo uma vida..."
+                registrarMensagemCombate("Voce morreu! Consumindo uma vida...")
                 Thread.start {
                     Thread.sleep(400)
                     playSFX("src/main/resources/sons/respawnw.wav")
@@ -413,7 +414,7 @@ class BattleController extends Main {
                     playerTurn = true
                 }
             } else {
-                battleMessage = "Fim de Jogo..."
+                registrarMensagemCombate("Fim de Jogo...")
                 Thread.start {
                     Thread.sleep(400)
                     stopAllMusic()
@@ -427,7 +428,7 @@ class BattleController extends Main {
             playerStateTime = System.currentTimeMillis()
             BufferedImage currentPlayerFrame = getAnimationFrame(playerHurt, 100, false, playerStateTime, STATE_IDLE)
             playerCachedHurtFrame = generateTintedSilhouette(currentPlayerFrame)
-            battleMessage = "O ${enemyNames[attacker]} atacou e tirou ${damage} de vida!"
+            registrarMensagemCombate("O ${enemyNames[attacker]} atacou e tirou ${damage} de vida!")
         }
 
         Thread.start {
