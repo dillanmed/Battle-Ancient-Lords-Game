@@ -8,6 +8,11 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 class ApiClient {
+    private static final Set<String> PUBLIC_AUTH_PATHS = [
+            '/api/auth/login',
+            '/api/auth/cadastro'
+    ] as Set
+
     final URI baseUri
     final TokenHandler tokenHandler
     private final HttpClient httpClient = HttpClient.newHttpClient()
@@ -38,7 +43,7 @@ class ApiClient {
         HttpRequest.Builder builder = HttpRequest.newBuilder(baseUri.resolve(path))
                 .header('Accept', 'application/json')
 
-        if (tokenHandler?.authenticated) {
+        if (tokenHandler?.authenticated && !PUBLIC_AUTH_PATHS.contains(path)) {
             builder.header('Authorization', "Bearer ${tokenHandler.token}")
         }
 
