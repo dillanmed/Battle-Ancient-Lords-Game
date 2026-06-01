@@ -1,4 +1,4 @@
-Mae 31, 2026 1:01:55 G.M. de.gurkenlabs.litiengine.DefaultUncaughtExceptionHandler uncaughtException
+Mezh. 01, 2026 2:57:38 G.M. de.gurkenlabs.litiengine.DefaultUncaughtExceptionHandler uncaughtException
 SEVERE: Game crashed! :(
 java.lang.IllegalAccessException: class org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite cannot access a member of class java.lang.Object (in module java.base) with modifiers "protected native"
 	at java.base/jdk.internal.reflect.Reflection.newIllegalAccessException(Reflection.java:394)
@@ -8,11 +8,11 @@ java.lang.IllegalAccessException: class org.codehaus.groovy.runtime.callsite.Pla
 	at org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite$PojoCachedMethodSiteNoUnwrapNoCoerce.invoke(PojoMetaMethodSite.java:209)
 	at org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite.call(PojoMetaMethodSite.java:51)
 	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:130)
-	at game.combate.BattleController.processarHabilidadeBackend(BattleController.groovy:77)
+	at game.combate.BattleController.processarHabilidadeBackend(BattleController.groovy:46)
 	at game.combate.BattleController$processarHabilidadeBackend$1.callStatic(Unknown Source)
-	at game.combate.BattleController.executeClassSpecialSkill(BattleController.groovy:70)
+	at game.combate.BattleController.executeClassSpecialSkill(BattleController.groovy:40)
 	at game.combate.BattleController$executeClassSpecialSkill$0.call(Unknown Source)
-	at game.Main.executeClassSpecialSkill(Main.groovy:457)
+	at game.Main.executeClassSpecialSkill(Main.groovy:485)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.codehaus.groovy.reflection.CachedMethod.invoke(CachedMethod.java:107)
@@ -29,7 +29,7 @@ java.lang.IllegalAccessException: class org.codehaus.groovy.runtime.callsite.Pla
 	at groovy.lang.MetaClassImpl.invokeMethod(MetaClassImpl.java:1256)
 	at org.codehaus.groovy.runtime.callsite.PogoMetaClassSite.callCurrent(PogoMetaClassSite.java:61)
 	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:176)
-	at game.Main$1.keyPressed(Main.groovy:446)
+	at game.Main$1.keyPressed(Main.groovy:474)
 	at java.desktop/java.awt.Component.processKeyEvent(Component.java:6579)
 	at java.desktop/java.awt.Component.processEvent(Component.java:6398)
 	at java.desktop/java.awt.Component.dispatchEventImpl(Component.java:4996)

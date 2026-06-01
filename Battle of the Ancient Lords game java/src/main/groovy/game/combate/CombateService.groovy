@@ -36,6 +36,10 @@ class CombateService {
         apiClient.post("/batalhas/${batalhaId}/habilidade", habilidade)
     }
 
+    Map usarPocaoVida(Number batalhaId) {
+        apiClient.post("/batalhas/${batalhaId}/pocao-vida", [:])
+    }
+
     Map criarEIniciarBatalha(Long personagemId, int fase) {
         Map batalha = criarBatalha(personagemId, fase)
         iniciarBatalha(batalha.id as Number)
