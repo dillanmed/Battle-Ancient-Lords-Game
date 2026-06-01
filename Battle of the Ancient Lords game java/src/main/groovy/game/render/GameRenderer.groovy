@@ -189,22 +189,23 @@ class GameRenderer extends Main {
         int startX = WIDTH.intdiv(2) - 380
         for (int i = 0; i < characters.length; i++) {
             int x = startX + (i * 320)
-            int displayHP = 0, displayMP = 0
+            String displayHP = "0"
+            String displayMP = "0"
             List<BufferedImage> previewList = null
 
             if (characters[i] == "WARRIOR") {
-                displayHP = Main.obterHpPreviewClasse("WARRIOR", 120)
-                displayMP = Main.obterMpPreviewClasse("WARRIOR", 30)
+                displayHP = Main.textoHpPreviewClasse("WARRIOR", 120)
+                displayMP = Main.textoMpPreviewClasse("WARRIOR", 30)
                 previewList = menuPreviewWarrior
             }
             else if (characters[i] == "ARCHER") {
-                displayHP = Main.obterHpPreviewClasse("ARCHER", 90)
-                displayMP = Main.obterMpPreviewClasse("ARCHER", 60)
+                displayHP = Main.textoHpPreviewClasse("ARCHER", 90)
+                displayMP = Main.textoMpPreviewClasse("ARCHER", 60)
                 previewList = menuPreviewArcher
             }
             else if (characters[i] == "MAGE") {
-                displayHP = Main.obterHpPreviewClasse("MAGE", 70)
-                displayMP = Main.obterMpPreviewClasse("MAGE", 120)
+                displayHP = Main.textoHpPreviewClasse("MAGE", 70)
+                displayMP = Main.textoMpPreviewClasse("MAGE", 120)
                 previewList = menuPreviewMage
             }
 
@@ -414,7 +415,9 @@ class GameRenderer extends Main {
                 // =========================================
                 // CAIXA ITEM
                 // =========================================
-                g.setColor(new Color(55, 55, 75, 230))
+                boolean selected = index == selectedInventoryItem
+
+                g.setColor(selected ? new Color(75, 75, 105, 240) : new Color(55, 55, 75, 230))
 
                 g.fillRoundRect(
                         caixaX,
@@ -428,7 +431,7 @@ class GameRenderer extends Main {
                 // =========================================
                 // BORDA ITEM
                 // =========================================
-                g.setColor(new Color(90, 90, 120))
+                g.setColor(selected ? new Color(255, 220, 120) : new Color(90, 90, 120))
 
                 g.drawRoundRect(
                         caixaX,
@@ -483,7 +486,7 @@ class GameRenderer extends Main {
         // =========================================
         // TEXTO FECHAR INVENTARIO
         // =========================================
-        String fecharTexto = "N = FECHAR INVENTARIO"
+        String fecharTexto = "ENTER = USAR | N = FECHAR INVENTARIO"
 
         g.setFont(new Font("Arial", Font.BOLD, 24))
 
@@ -559,6 +562,13 @@ class GameRenderer extends Main {
         if (phaseBackgrounds[bgIndex] != null) {
             g.drawImage(phaseBackgrounds[bgIndex], 0, 0, WIDTH, HEIGHT, null)
         }
+
+        if (battleLoading) {
+            renderBattleLoadingCutscene(g)
+            return
+        }
+
+        boolean showPhaseBanner = System.currentTimeMillis() < phaseBannerUntil
 
         int hudY = HEIGHT - 240
         int spriteSize = 200
@@ -755,7 +765,7 @@ class GameRenderer extends Main {
                 g.setColor(new Color(220,50,50))
 
                 int enemyHpWidth =
-                        (int)((enemyHP[i] / (double) maxEnemyHP) * barWidth)
+                        (int)((enemyHP[i] / (double) Math.max(enemyMaxHP[i], 1)) * barWidth)
 
                 g.fillRoundRect(
                         barX,
@@ -864,6 +874,24 @@ class GameRenderer extends Main {
         // HUD
         // =========================================
 
+        if (showPhaseBanner) {
+            g.setColor(new Color(0, 0, 0, 150))
+            g.fillRect(0, 0, WIDTH, HEIGHT)
+
+            g.setColor(new Color(255, 215, 120))
+            g.setFont(getGameFont(Font.BOLD, 58f))
+            FontMetrics titleMetrics = g.getFontMetrics()
+            int titleX = (WIDTH - titleMetrics.stringWidth(phaseBannerTitle)) / 2
+            int titleY = HEIGHT.intdiv(2) - 45
+            g.drawString(phaseBannerTitle, titleX, titleY)
+
+            g.setColor(Color.WHITE)
+            g.setFont(getGameFont(Font.BOLD, 28f))
+            FontMetrics subtitleMetrics = g.getFontMetrics()
+            int subtitleX = (WIDTH - subtitleMetrics.stringWidth(phaseBannerSubtitle)) / 2
+            g.drawString(phaseBannerSubtitle, subtitleX, titleY + 50)
+        }
+
         g.setColor(new Color(15,15,20,240))
         g.fillRoundRect(30, hudY, WIDTH - 60, 120, 15, 15)
 
@@ -939,5 +967,39 @@ class GameRenderer extends Main {
                 WIDTH.intdiv(2) - 240,
                 hudY + 95
         )
+    }
+
+    static void renderBattleLoadingCutscene(Graphics2D g) {
+        long now = System.currentTimeMillis()
+        float pulse = (float) ((Math.sin(now / 180.0d) + 1.0d) / 2.0d)
+
+        g.setColor(new Color(0, 0, 0, 210))
+        g.fillRect(0, 0, WIDTH, HEIGHT)
+
+        g.setColor(new Color(255, 215, 120))
+        g.setFont(getGameFont(Font.BOLD, 56f))
+        FontMetrics titleMetrics = g.getFontMetrics()
+        int titleX = (WIDTH - titleMetrics.stringWidth(battleLoadingTitle)) / 2
+        int titleY = HEIGHT.intdiv(2) - 55
+        g.drawString(battleLoadingTitle, titleX, titleY)
+
+        g.setColor(Color.WHITE)
+        g.setFont(getGameFont(Font.BOLD, 26f))
+        FontMetrics subtitleMetrics = g.getFontMetrics()
+        int subtitleX = (WIDTH - subtitleMetrics.stringWidth(battleLoadingSubtitle)) / 2
+        g.drawString(battleLoadingSubtitle, subtitleX, titleY + 48)
+
+        int barWidth = 360
+        int barHeight = 8
+        int barX = WIDTH.intdiv(2) - barWidth.intdiv(2)
+        int barY = titleY + 86
+
+        g.setColor(new Color(60, 60, 70, 220))
+        g.fillRoundRect(barX, barY, barWidth, barHeight, 8, 8)
+
+        int glowWidth = 90
+        int glowX = barX + (int) ((barWidth - glowWidth) * pulse)
+        g.setColor(new Color(255, 215, 120, 230))
+        g.fillRoundRect(glowX, barY, glowWidth, barHeight, 8, 8)
     }
 }

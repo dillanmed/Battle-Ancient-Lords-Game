@@ -103,8 +103,10 @@ class Main {
     // =========================================
     // INVENTORY SYSTEM
     // =========================================
-    static List<String> inventoryItems = ["Espada de Mitril", "Pocao de Vida Extra", "Elixir de Mana", "Escudo Ancestral", "Anel do Dracao", "Capa da Invisibilidade"]
-    static List<Integer> inventoryQuantities = [1, 5, 3, 1, 1, 2]
+    static List<String> inventoryItems = ["Pocao de Vida"]
+    static List<Integer> inventoryQuantities = [5]
+    static int selectedInventoryItem = 0
+    static volatile boolean inventoryActionLoading = false
 
     // =========================================
     // CHARACTER SELECT
@@ -154,6 +156,13 @@ class Main {
     static int selectedEnemy = 0
     static boolean introActive = false
     static boolean phaseTransitionActive = false
+    static volatile boolean battleLoading = false
+    static volatile boolean characterSelectionLoading = false
+    static String battleLoadingTitle = "PREPARANDO ARENA"
+    static String battleLoadingSubtitle = "AGUARDE..."
+    static String phaseBannerTitle = ""
+    static String phaseBannerSubtitle = ""
+    static long phaseBannerUntil = 0L
 
     static float currentPlayerX = -200f
     static float currentPlayerY = 0f
@@ -334,6 +343,26 @@ class Main {
                     return
                 }
 
+                if (gameState == INVENTORY) {
+                    switch (e.getKeyCode()) {
+                        case KeyEvent.VK_UP:
+                            if (!inventario.items.isEmpty()) {
+                                selectedInventoryItem = (selectedInventoryItem - 1 + inventario.items.size()) % inventario.items.size()
+                            }
+                            break
+                        case KeyEvent.VK_DOWN:
+                            if (!inventario.items.isEmpty()) {
+                                selectedInventoryItem = (selectedInventoryItem + 1) % inventario.items.size()
+                            }
+                            break
+                        case KeyEvent.VK_ENTER:
+                        case KeyEvent.VK_SPACE:
+                            usarItemSelecionadoDoInventario()
+                            break
+                    }
+                    return
+                }
+
                 if (gameState == MENU) {
                     switch (e.getKeyCode()) {
                         case KeyEvent.VK_UP:
@@ -363,20 +392,31 @@ class Main {
                             selectedCharacter = (selectedCharacter + 1) % 3
                             break
                         case KeyEvent.VK_ENTER:
+                            if (characterSelectionLoading) break
+                            characterSelectionLoading = true
                             currentClass = characters[selectedCharacter]
-                            println "[DIAGNOSTICO CLASSE] Selecionou a classe: " + currentClass
-                            if (!tryLoadBackendCharacter(currentClass)) {
-                                resetPlayerStatsCompletely()
-                            }
-                            loadActivePlayerSprites()
-
-                            stopAllMusic()
-                            currentPhase = 1
-                            generateNewEnemiesForNextPhase()
-                            startBattleIntro()
-
+                            playerTurn = false
+                            startBattleLoadingCutscene("PREPARANDO HEROI", "A ARENA ESTA SENDO CARREGADA")
                             gameState = BATTLE
-                            playBattleMusic("src/main/resources/sons/Musica de batalha.mp3")
+                            println "[DIAGNOSTICO CLASSE] Selecionou a classe: " + currentClass
+                            Thread.start {
+                                try {
+                                    if (!tryLoadBackendCharacter(currentClass)) {
+                                        resetPlayerStatsCompletely()
+                                    }
+                                    loadActivePlayerSprites()
+
+                                    stopAllMusic()
+                                    currentPhase = 1
+                                    generateNewEnemiesForNextPhase()
+                                    startBattleIntro()
+
+                                    playBattleMusic("src/main/resources/sons/Musica de batalha.mp3")
+                                } finally {
+                                    battleLoading = false
+                                    characterSelectionLoading = false
+                                }
+                            }
                             break
                     }
                     return
@@ -392,13 +432,21 @@ class Main {
                             break
                         case KeyEvent.VK_ENTER:
                             if (selectedGameOverOpt == 0) {
+                                if (battleLoading) break
                                 resetPlayerStatsCompletely()
                                 loadActivePlayerSprites()
                                 currentPhase = 1
-                                generateNewEnemiesForNextPhase()
-                                startBattleIntro()
-                                gameState = BATTLE
-                                playBattleMusic("src/main/resources/sons/Musica de batalha.mp3")
+                                startBattleLoadingCutscene("PREPARANDO ARENA", "A FASE ${currentPhase} ESTA SENDO CARREGADA")
+                                Thread.start {
+                                    try {
+                                        generateNewEnemiesForNextPhase()
+                                        startBattleIntro()
+                                        gameState = BATTLE
+                                        playBattleMusic("src/main/resources/sons/Musica de batalha.mp3")
+                                    } finally {
+                                        battleLoading = false
+                                    }
+                                }
                             } else {
                                 System.exit(0)
                             }
@@ -604,6 +652,20 @@ class Main {
         stats?.mp ?: mpPadrao
     }
 
+    static String textoHpPreviewClasse(String classe, int hpPadrao) {
+        if (previewPersonagensCarregando) {
+            return "..."
+        }
+        obterHpPreviewClasse(classe, hpPadrao).toString()
+    }
+
+    static String textoMpPreviewClasse(String classe, int mpPadrao) {
+        if (previewPersonagensCarregando) {
+            return "..."
+        }
+        obterMpPreviewClasse(classe, mpPadrao).toString()
+    }
+
     static String classeParaPreview(String classe) {
         switch (classe?.trim()?.toUpperCase()) {
             case "GUERREIRO":
@@ -671,7 +733,8 @@ class Main {
     static void startBattleIntro() {
         introActive = true
         playerTurn = false
-        battleMessage = "Entrando na Arena da Fase ${currentPhase}..."
+        showPhaseBanner(currentPhase)
+        battleMessage = "FASE ${currentPhase} - NOVOS INIMIGOS APARECERAM"
 
         currentPlayerX = -250f
         playerVisualState = STATE_WALK
@@ -685,13 +748,39 @@ class Main {
         }
     }
 
+    static void startBattleLoadingCutscene(String titulo, String subtitulo) {
+        battleLoading = true
+        playerTurn = false
+        battleLoadingTitle = titulo
+        battleLoadingSubtitle = subtitulo
+        battleMessage = subtitulo
+
+        currentPlayerX = -250f
+        playerVisualState = STATE_IDLE
+        playerStateTime = System.currentTimeMillis()
+
+        for (int i = 0; i < 3; i++) {
+            currentEnemyPos[i][0] = (float) (WIDTH + 180 + (i * 140))
+            currentEnemyPos[i][1] = (float) TARGET_ENEMY_POS[i][1]
+            enemyVisualState[i] = STATE_IDLE
+            enemyStateTime[i] = System.currentTimeMillis()
+        }
+    }
+
     static void startPhaseTransition() {
         phaseTransitionActive = true
         playerTurn = false
+        phaseBannerUntil = 0L
         battleMessage = "Area limpa! Avancando para a proxima fase..."
 
         playerVisualState = STATE_WALK
         playerStateTime = System.currentTimeMillis()
+    }
+
+    static void showPhaseBanner(int fase) {
+        phaseBannerTitle = "FASE ${fase}"
+        phaseBannerSubtitle = "NOVOS INIMIGOS APARECERAM"
+        phaseBannerUntil = System.currentTimeMillis() + 1000L
     }
 
     static void updatePositions() {
@@ -707,11 +796,18 @@ class Main {
         if (phaseTransitionActive) {
             if (currentPlayerX < WIDTH + 200) {
                 currentPlayerX += speed
-            } else {
+            } else if (!battleLoading) {
                 phaseTransitionActive = false
                 currentPhase++
-                generateNewEnemiesForNextPhase()
-                startBattleIntro()
+                startBattleLoadingCutscene("FASE ${currentPhase}", "NOVOS INIMIGOS ESTAO CHEGANDO")
+                Thread.start {
+                    try {
+                        generateNewEnemiesForNextPhase()
+                        startBattleIntro()
+                    } finally {
+                        battleLoading = false
+                    }
+                }
             }
             return
         }
@@ -742,6 +838,12 @@ class Main {
         }
 
         if (allInPosition) {
+            if (System.currentTimeMillis() < phaseBannerUntil) {
+                playerTurn = false
+                return
+            }
+
+            phaseBannerUntil = 0L
             introActive = false
             playerTurn = true
             battleMessage = "LEFT / RIGHT = SELECIONAR ALVO | ENTER = ATACAR | SPACE = ESPECIAL"
@@ -838,6 +940,57 @@ class Main {
         }
     }
 
+    static void usarItemSelecionadoDoInventario() {
+        if (inventoryActionLoading) {
+            return
+        }
+
+        if (inventario.items.isEmpty()) {
+            battleMessage = "Inventario vazio."
+            return
+        }
+
+        selectedInventoryItem = Math.min(selectedInventoryItem, inventario.items.size() - 1)
+        Item item = inventario.items[selectedInventoryItem]
+
+        if (item.nome != inventario.POCAO_VIDA) {
+            battleMessage = "Item indisponivel."
+            return
+        }
+
+        if (playerHP >= maxHP) {
+            battleMessage = "HP ja esta cheio."
+            return
+        }
+
+        if (currentBattleId == null) {
+            boolean usado = inventario.useItem(item.nome)
+            if (usado) {
+                battleMessage = "${item.nome} usada! +${inventario.CURA_POCAO_VIDA} HP."
+                selectedInventoryItem = Math.max(0, Math.min(selectedInventoryItem, inventario.items.size() - 1))
+            }
+            return
+        }
+
+        inventoryActionLoading = true
+        battleMessage = "Usando ${item.nome}..."
+
+        Thread.start("usar-pocao-vida") {
+            try {
+                Map batalha = ServiceRegistry.combateService.usarPocaoVida(currentBattleId)
+                aplicarEstadoBatalhaBackend(batalha)
+                inventario.removeItem(item.nome, 1)
+                selectedInventoryItem = Math.max(0, Math.min(selectedInventoryItem, inventario.items.size() - 1))
+                battleMessage = batalha.mensagem ?: "${item.nome} usada! +${inventario.CURA_POCAO_VIDA} HP."
+            } catch (Exception e) {
+                battleMessage = "Erro ao usar pocao no servidor de combate."
+                println "Erro ao usar pocao de vida: ${e.message}"
+            } finally {
+                inventoryActionLoading = false
+            }
+        }
+    }
+
     static void aplicarEstadoBatalhaBackend(Map batalha) {
         if (!batalha) return
 
@@ -850,7 +1003,7 @@ class Main {
 
         List inimigosBackend = (batalha.inimigos ?: []) as List
         for (int i = 0; i < 3; i++) {
-            Map inimigo = i < inimigosBackend.size() ? inimigosBackend[i] as Map : null
+            Map inimigo = inimigoBackendParaSlot(inimigosBackend, i)
             if (inimigo != null) {
                 enemyIds[i] = inimigo.id == null ? null : inimigo.id as Long
                 enemyNames[i] = inimigo.nome ?: enemyNames[i]
@@ -869,6 +1022,26 @@ class Main {
         }
 
         maxEnemyHP = Math.max(1, enemyMaxHP.max() as int)
+    }
+
+    static Map inimigoBackendParaSlot(List inimigosBackend, int slot) {
+        if (!inimigosBackend || slot < 0) {
+            return null
+        }
+
+        Long idAtual = slot < enemyIds.length ? enemyIds[slot] : null
+        if (idAtual != null) {
+            Map porId = inimigosBackend.find { inimigo ->
+                def idBackend = (inimigo as Map).id
+                idBackend != null && (idBackend as Long) == idAtual
+            } as Map
+
+            if (porId != null) {
+                return porId
+            }
+        }
+
+        slot < inimigosBackend.size() ? inimigosBackend[slot] as Map : null
     }
 
     static String nomeInimigoBackend(Map batalha, int index, String fallback) {
