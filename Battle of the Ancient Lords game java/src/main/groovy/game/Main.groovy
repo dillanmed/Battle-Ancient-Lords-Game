@@ -107,6 +107,7 @@ class Main {
     static List<Integer> inventoryQuantities = [5]
     static int selectedInventoryItem = 0
     static volatile boolean inventoryActionLoading = false
+    static Set<Long> batalhasComPocaoUsada = [] as Set
 
     // =========================================
     // CHARACTER SELECT
@@ -158,6 +159,7 @@ class Main {
     static boolean phaseTransitionActive = false
     static volatile boolean battleLoading = false
     static volatile boolean characterSelectionLoading = false
+    static volatile boolean combatConnectionPaused = false
     static String battleLoadingTitle = "PREPARANDO ARENA"
     static String battleLoadingSubtitle = "AGUARDE..."
     static String phaseBannerTitle = ""
@@ -175,6 +177,7 @@ class Main {
     // MESSAGE
     // =========================================
     static String battleMessage = "LEFT / RIGHT = SELECT | ENTER = ATTACK"
+    static List<String> combatLog = new ArrayList<>()
 
     static Random random = new Random()
 
@@ -326,17 +329,19 @@ class Main {
 
                 // Teclas Globais de InventÃ¡rio (Apenas acessÃ­vel se estiver jogando ou jÃ¡ no inventÃ¡rio)
                 if (e.getKeyCode() == KeyEvent.VK_M) {
-                    if (gameState == BATTLE) {
+                    if (gameState == BATTLE && podeAbrirInventario()) {
                         playSFX("src/main/resources/sons/Abrindo inventario.wav")
                         previousState = gameState
                         gameState = INVENTORY
                         println "[INVENTARIO] Painel aberto. Itens carregados no Console."
+                    } else if (gameState == BATTLE) {
+                        registrarMensagemCombate("Aguarde o turno ficar livre.")
                     }
                     return
                 }
 
                 if (e.getKeyCode() == KeyEvent.VK_N) {
-                    if (gameState == INVENTORY) {
+                    if (gameState == INVENTORY && !inventoryActionLoading) {
                         gameState = previousState
                         println "[INVENTARIO] Retornando ao combate."
                     }
@@ -480,7 +485,7 @@ class Main {
                     return // Trava comandos padrÃµes de luta se estiver no inventÃ¡rio
                 }
 
-                if (!playerTurn || introActive || phaseTransitionActive || isRespawning) return
+                if (bloqueiaInputCombate()) return
 
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_LEFT:
@@ -734,7 +739,7 @@ class Main {
         introActive = true
         playerTurn = false
         showPhaseBanner(currentPhase)
-        battleMessage = "FASE ${currentPhase} - NOVOS INIMIGOS APARECERAM"
+        registrarMensagemCombate(currentPhase == 6 ? "BOSS FINAL - ${bossName}" : "FASE ${currentPhase} - NOVOS INIMIGOS APARECERAM")
 
         currentPlayerX = -250f
         playerVisualState = STATE_WALK
@@ -771,13 +776,20 @@ class Main {
         phaseTransitionActive = true
         playerTurn = false
         phaseBannerUntil = 0L
-        battleMessage = "Area limpa! Avancando para a proxima fase..."
+        registrarMensagemCombate("Area limpa! Avancando para a proxima fase...")
 
         playerVisualState = STATE_WALK
         playerStateTime = System.currentTimeMillis()
     }
 
     static void showPhaseBanner(int fase) {
+        if (fase == 6) {
+            phaseBannerTitle = "BOSS FINAL"
+            phaseBannerSubtitle = bossName ?: "MINOTAURO ANCESTRAL"
+            phaseBannerUntil = System.currentTimeMillis() + 1400L
+            return
+        }
+
         phaseBannerTitle = "FASE ${fase}"
         phaseBannerSubtitle = "NOVOS INIMIGOS APARECERAM"
         phaseBannerUntil = System.currentTimeMillis() + 1000L
@@ -934,9 +946,66 @@ class Main {
             return batalha
         } catch (Exception e) {
             currentBattleId = null
-            battleMessage = "Falha ao iniciar batalha no servidor de combate."
+            registrarMensagemCombate("Falha ao iniciar batalha no servidor de combate.")
             println "Erro ao iniciar batalha no servico-combate: ${e.message}"
             return [inimigos: []]
+        }
+    }
+
+    static boolean bloqueiaInputCombate() {
+        !playerTurn ||
+                introActive ||
+                phaseTransitionActive ||
+                battleLoading ||
+                combatConnectionPaused ||
+                game.combate.BattleController.battleActionInProgress ||
+                isRespawning ||
+                System.currentTimeMillis() < phaseBannerUntil
+    }
+
+    static boolean podeAbrirInventario() {
+        gameState == BATTLE && !bloqueiaInputCombate()
+    }
+
+    static void registrarMensagemCombate(String mensagem) {
+        if (mensagem == null || mensagem.trim().isEmpty()) {
+            return
+        }
+
+        battleMessage = mensagem
+        combatLog.add(0, mensagem)
+        while (combatLog.size() > 3) {
+            combatLog.remove(combatLog.size() - 1)
+        }
+    }
+
+    static void feedbackSemMana(int custoMana) {
+        registrarMensagemCombate("Mana insuficiente! Precisa de ${custoMana} MP.")
+        floatingTexts.add(new FloatingText("SEM MANA", (int) currentPlayerX + 70, (int) currentPlayerY - 30, new Color(80, 170, 255)))
+    }
+
+    static void pausarCombatePorErro(String origem) {
+        combatConnectionPaused = true
+        playerTurn = false
+        registrarMensagemCombate("Reconectando ao combate...")
+
+        Thread.start("reconectar-combate") {
+            boolean reconectado = false
+            try {
+                Thread.sleep(900)
+                if (currentBattleId != null) {
+                    Map batalha = ServiceRegistry.combateService.buscarBatalha(currentBattleId)
+                    aplicarEstadoBatalhaBackend(batalha)
+                    registrarMensagemCombate("Combate reconectado.")
+                    playerTurn = true
+                    reconectado = true
+                }
+            } catch (Exception e) {
+                registrarMensagemCombate("Falha ao reconectar combate.")
+                println "Falha ao reconectar combate (${origem}): ${e.message}"
+            } finally {
+                combatConnectionPaused = !reconectado
+            }
         }
     }
 
@@ -945,8 +1014,13 @@ class Main {
             return
         }
 
+        if (bloqueiaInputCombate()) {
+            registrarMensagemCombate("Aguarde o turno ficar livre.")
+            return
+        }
+
         if (inventario.items.isEmpty()) {
-            battleMessage = "Inventario vazio."
+            registrarMensagemCombate("Inventario vazio.")
             return
         }
 
@@ -954,37 +1028,43 @@ class Main {
         Item item = inventario.items[selectedInventoryItem]
 
         if (item.nome != inventario.POCAO_VIDA) {
-            battleMessage = "Item indisponivel."
+            registrarMensagemCombate("Item indisponivel.")
             return
         }
 
         if (playerHP >= maxHP) {
-            battleMessage = "HP ja esta cheio."
+            registrarMensagemCombate("HP ja esta cheio.")
+            return
+        }
+
+        if (currentBattleId != null && batalhasComPocaoUsada.contains(currentBattleId)) {
+            registrarMensagemCombate("Voce ja usou uma pocao nesta batalha.")
             return
         }
 
         if (currentBattleId == null) {
             boolean usado = inventario.useItem(item.nome)
             if (usado) {
-                battleMessage = "${item.nome} usada! +${inventario.CURA_POCAO_VIDA} HP."
+                registrarMensagemCombate("${item.nome} usada! +${inventario.CURA_POCAO_VIDA} HP.")
                 selectedInventoryItem = Math.max(0, Math.min(selectedInventoryItem, inventario.items.size() - 1))
             }
             return
         }
 
         inventoryActionLoading = true
-        battleMessage = "Usando ${item.nome}..."
+        registrarMensagemCombate("Usando ${item.nome}...")
 
         Thread.start("usar-pocao-vida") {
             try {
                 Map batalha = ServiceRegistry.combateService.usarPocaoVida(currentBattleId)
                 aplicarEstadoBatalhaBackend(batalha)
                 inventario.removeItem(item.nome, 1)
+                batalhasComPocaoUsada.add(currentBattleId)
                 selectedInventoryItem = Math.max(0, Math.min(selectedInventoryItem, inventario.items.size() - 1))
-                battleMessage = batalha.mensagem ?: "${item.nome} usada! +${inventario.CURA_POCAO_VIDA} HP."
+                registrarMensagemCombate(batalha.mensagem ?: "${item.nome} usada! +${inventario.CURA_POCAO_VIDA} HP.")
             } catch (Exception e) {
-                battleMessage = "Erro ao usar pocao no servidor de combate."
                 println "Erro ao usar pocao de vida: ${e.message}"
+                pausarCombatePorErro("pocao")
             } finally {
                 inventoryActionLoading = false
             }

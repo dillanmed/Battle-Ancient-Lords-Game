@@ -961,12 +961,34 @@ class GameRenderer extends Main {
 
         g.drawString(heartsText, 810, hudY + 50)
 
+        renderCombatLog(g, hudY)
+
         g.setColor(Color.LIGHT_GRAY)
         g.drawString(
                 battleMessage + " | M = BAÃƒÅ¡ DE ITENS",
                 WIDTH.intdiv(2) - 240,
                 hudY + 95
         )
+    }
+
+    static void renderCombatLog(Graphics2D g, int hudY) {
+        if (combatLog == null || combatLog.isEmpty()) {
+            return
+        }
+
+        int logX = 60
+        int logY = hudY + 76
+
+        g.setFont(getGameFont(Font.BOLD, 15f))
+        for (int i = 0; i < Math.min(3, combatLog.size()); i++) {
+            int alpha = i == 0 ? 240 : 165
+            g.setColor(new Color(235, 235, 235, alpha))
+            String linha = combatLog[i]
+            if (linha.length() > 50) {
+                linha = linha.substring(0, 47) + "..."
+            }
+            g.drawString(linha, logX, logY + (i * 20))
+        }
     }
 
     static void renderBattleLoadingCutscene(Graphics2D g) {
